@@ -1,5 +1,8 @@
-import { Template } from "@24tools/playable_template";
+import { TestSceneC } from "../controllers/TestSceneC";
+import { SoundC, Template } from "@24tools/playable_template";
 
 export const afterResourcesLoadedCb: (() => void) | undefined = () => {
-  Template.disableLoader()
+  TestSceneC.init();
+  SoundC.init();
+  Template.disableLoader();
 };

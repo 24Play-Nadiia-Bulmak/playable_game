@@ -7,14 +7,14 @@ import { beforeResourcesLoadedCb } from "./templateConfig/beforeResourcesLoadedC
 import { afterResourcesLoadedCb } from "./templateConfig/afterResourcesLoadedCb";
 import { customFont } from "./fonts/customFont";
 import { configUIParams } from "./configUIParams/configUIParams";
-import { Template } from "@24tools/playable_template";
+import { Template, Template3d } from "@24tools/playable_template";
 import { firstClickCb } from "./templateConfig/firstClickCb";
 Template.set24ADSControls();
 window.setupConfig = async function (config) {
   Template.initConfig({
-    templateType: TemplateType.clear,
+    templateType: TemplateType["3d"],
     redirectOptions: {},
-    ticker: () => 0,
+    ticker: Template3d.ticker,
     debug: {
       physics: false,
       // set true if you want to enable physics debugger

@@ -17,10 +17,15 @@
     "@24tools/playable_template": "^0.15.1",
     "@tweenjs/tween.js": "^25.0.0",
     "bytebrew-web-sdk": "^1.0.1",
-    "howler": "^2.2.4"
+    "cannon-es": "^0.20.0",
+    "cannon-es-debugger": "^1.0.0",
+    "howler": "^2.2.4",
+    "nipplejs": "^0.10.2",
+    "three": "^0.183.2"
   },
   "devDependencies": {
     "@types/howler": "^2.2.12",
+    "@types/three": "^0.183.1",
     "rollup": "^4.59.0",
     "typescript": "^5.9.3",
     "vite": "^6.4.1"
