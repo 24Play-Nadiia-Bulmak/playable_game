@@ -1,11 +1,13 @@
 import { BoxGeometry, Mesh, MeshStandardMaterial, PerspectiveCamera, Vector3 } from "three";
 import { ThreeC } from "./ThreeC";
-import { InputC, JoystickC } from "@24tools/playable_template";
+import { InputC, JoystickC, UpdateController } from "@24tools/playable_template";
 import { CameraC } from "./CameraC";
+import { Player } from "./Presets/Player";
 
 export class TestSceneC {
   static init() {
-    this.createCharacter();
+    this.createMap();
+    this.InitPlayer();
 
     InputC.onTouchDown.addDelegate((event) => {
       console.log("onMouseDown", event);
@@ -41,25 +43,24 @@ export class TestSceneC {
     ThreeC.addToScene(plane);
   }
 
-  private static createCharacter() {
-    const characterMesh = ThreeC.getObject("character");
-    characterMesh.position.set(1, 0, 4);
-    characterMesh.rotation.y = Math.PI;
+  private static createMap() {
+    // const characterMesh = ThreeC.getObject("character");
+    // characterMesh.position.set(1, 0, 4);
+    // characterMesh.rotation.y = Math.PI;
     
     const mapMesh = ThreeC.getObject("map");
-    
-    // mapMesh.rotation.y = Math.PI / 2;
 
-    ThreeC.setShadowsStateForChildren(characterMesh, true, false);
-    // ThreeC.setShadowsStateForChildren(mapMesh, false, true);
-
-    ThreeC.addToScene(characterMesh);
+    // ThreeC.addToScene(characterMesh);
     ThreeC.addToScene(mapMesh);
 
 
-    const cam = CameraC.getCamera<PerspectiveCamera>();
-    cam.position.set(0, 3, 9);
-    cam.lookAt(characterMesh.position);
-    cam.updateProjectionMatrix();
+    // const cam = CameraC.getCamera<PerspectiveCamera>();
+    // cam.position.set(-1, 2, 7);
+    // cam.lookAt(characterMesh.position);
+    // cam.updateProjectionMatrix();
+  }
+
+  private static InitPlayer() {
+    Player.Init();
   }
 }

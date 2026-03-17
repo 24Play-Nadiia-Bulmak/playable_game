@@ -13,6 +13,7 @@ import { CameraC } from "../controllers/CameraC";
 import { ThreeC } from "../controllers/ThreeC";
 import { Color } from "three";
 import { Vec3 } from "cannon-es";
+import { PlayerInput } from "../controllers/Presets/Input/PlayerInput";
 export const beforeResourcesLoadedCb = () => {
   FilterScene.init();
   InstallBanner.init();
@@ -24,7 +25,7 @@ export const beforeResourcesLoadedCb = () => {
   ThreeC.createBaseLights();
   ThreeC.setupDirectionalLight();
 
-  let physicsWorld = Physics_internal.init(new Vec3(0, -9.81, 0));
+  let physicsWorld = Physics_internal.init(new Vec3(0, 0, 0));
 
   // example of using joystick. Uncomment if you need joystick
 
@@ -71,4 +72,6 @@ export const beforeResourcesLoadedCb = () => {
       return;
     }
   });
+
+  PlayerInput.InitJoystick();
 };

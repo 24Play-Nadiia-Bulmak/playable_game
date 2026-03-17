@@ -7,11 +7,11 @@ export const meshes : ConvertResourceType = {
   resources: [
     {
       name: "character",
-      value: ConvertToBase64WhenRelease('./../models/ZombiePunk_Character.glb'),
+      value: ConvertToBase64WhenRelease('./models/ZombiePunk_Character.glb'),
     },
         {
       name: "map",
-      value: ConvertToBase64WhenRelease('./../models/ZombiePunk_Map.glb'),
+      value: ConvertToBase64WhenRelease('./models/ZombiePunk_Map.glb'),
     },
   ],
   loader: Template3d.meshLoader
