@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,user-scalable=no,initial-scale=1.0, minimum-scale=1.0,maximum-scale=1.0"
+    />
+    <meta name="ad.orientation" content="portrait,landscape" />
+    <title>Playable</title>
+
+    <link href="./css/loader.css" rel="stylesheet" />
+    <link href="./css/main.css" rel="stylesheet" />
+    <link href="./css/ui.css" rel="stylesheet" />
+    <style id="animations"></style>
+  </head>
+  <body>
+    <div class="loader">
+      <div class="loader_block">
+        <img class="loader_icon" src="./resources/images/icon.webp" />
+        <div class="loader_box">
+          <p class="loader_text">loading</p>
+          <div class="loader_wrapper">
+            <div id="loader" class="loader_line"></div>
+          </div>
+        </div>
+        <img class="logo24" src="./resources/images/logo24.png" />
+      </div>
+    </div>
+    <div id="interactive">
+      <h3 class="interactive-text">Redirected to store...</h3>
+    </div>
+
+    <div id="constructor">
+      <div id="ui"></div>
+      <div id="editor"></div>
+    </div>
+    <script id="dev-start">
+      window.onload = function () {
+        window.setupConfig();
+      };
+
+      window.openStorePage = function (url) {
+        console.log("openStorePage:", url);
+      };
+    </script>
+    <script type="module" src="./index.ts"></script>
+  </body>
+</html>

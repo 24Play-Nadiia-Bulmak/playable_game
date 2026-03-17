@@ -1,0 +1,108 @@
+@keyframes disableLoader {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    display: none;
+  }
+}
+.loader {
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: fixed;
+  width: 100.5vw;
+  height: 100.5vh;
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  background: linear-gradient(30deg, #0c284e 0%, #4291f3 100%);
+}
+.loader_block {
+  padding-top: 18%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: 55%;
+  height: 100%;
+  padding-bottom: 2vw;
+}
+.loader_box {
+  pointer-events: none;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+.loader_icon {
+  pointer-events: none;
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 5vw;
+  border: 2vw solid white;
+  box-shadow: 0px 2vw 50px rgba(0, 0, 0, 0.4);
+  box-sizing: border-box;
+}
+.loader_wrapper {
+  pointer-events: none;
+  height: 6vw;
+  width: 100%;
+  border-radius: 2.7vw;
+  border: 0.6vw solid #fff;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.loader_line {
+  pointer-events: none;
+  background-color: #ffc530;
+  height: 100%;
+  width: 0;
+  margin-bottom: 20%;
+  transition: width 200ms;
+}
+.loader_text {
+  pointer-events: none;
+  font-size: 8vw;
+  color: #fff;
+  display: block;
+  margin: 0;
+  margin-bottom: 2vw;
+}
+.logo24 {
+  pointer-events: none;
+  width: 60%;
+  margin-bottom: 10px;
+  fill: white;
+}
+@media (orientation: landscape) {
+  .loader_block {
+    padding-top: 3%;
+    width: 50vh;
+  }
+  .loader_icon {
+    border-radius: 5vh;
+    border: 2vh solid white;
+    box-shadow: 0px 2vh 50px rgba(0, 0, 0, 0.4);
+  }
+  .loader_wrapper {
+    height: 2.8vw;
+    width: 100%;
+    border-radius: 2.5vh;
+    border: 0.6vh solid #fff;
+  }
+  .loader_line {
+    height: 100%;
+    width: 0;
+    transition: width 250ms;
+  }
+  .loader_text {
+    font-size: 6vh;
+    margin-bottom: 2vh;
+  }
+}

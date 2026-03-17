@@ -1,0 +1,1 @@
+export const resizeCb: (() => void) | undefined = undefined

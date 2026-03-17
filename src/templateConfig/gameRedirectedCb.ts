@@ -1,0 +1,1 @@
+export const gameRedirectedCb : (() => void) | undefined = undefined
