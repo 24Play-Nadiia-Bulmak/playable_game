@@ -1,14 +1,18 @@
-// import { ConvertToBase64WhenRelease } from "@24tools/ads_common";
+import { ConvertToBase64WhenRelease } from "@24tools/ads_common";
 import { ConvertResourceType, Template3d } from "@24tools/playable_template";
 
 
 export const meshes : ConvertResourceType = {
   type: "mesh",
   resources: [
-    // {
-    //   name: "scene",
-    //   value: ConvertToBase64WhenRelease("./SceneСombo.glb"),
-    // },
+    {
+      name: "character",
+      value: ConvertToBase64WhenRelease('./../models/ZombiePunk_Character.glb'),
+    },
+        {
+      name: "map",
+      value: ConvertToBase64WhenRelease('./../models/ZombiePunk_Map.glb'),
+    },
   ],
   loader: Template3d.meshLoader
 }
