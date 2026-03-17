@@ -23,7 +23,7 @@ export class PlayerInput implements IMoveInput {
         JoystickC.init(options);
 
         JoystickC.onJoysticMove.addDelegate(({ event, data }) => {
-            console.log('onJoysticMove', event, data);
+            // console.log('onJoysticMove', event, data);
         })
     }
 

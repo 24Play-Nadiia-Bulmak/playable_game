@@ -3,6 +3,8 @@ import { ThreeC } from "./ThreeC";
 import { InputC, JoystickC, UpdateController } from "@24tools/playable_template";
 import { CameraC } from "./CameraC";
 import { Player } from "./Presets/Player";
+import { PhysicsBody, PhysicsLayer } from "./PhysicsC";
+import { addBoundingBoxHelper } from "./Presets/Helper";
 
 export class TestSceneC {
   static init() {
@@ -10,7 +12,7 @@ export class TestSceneC {
     this.InitPlayer();
 
     InputC.onTouchDown.addDelegate((event) => {
-      console.log("onMouseDown", event);
+      // console.log("onMouseDown", event);
     });
 
     // if you have update in your controller
@@ -23,6 +25,7 @@ export class TestSceneC {
     const geometry = new BoxGeometry(1, 1, 1);
     const material = new MeshStandardMaterial({ color: 0xcc0000 });
     const cube = new Mesh(geometry, material);
+    cube.position.set(0, 0.5, 2);
 
     const geometryPlane = new BoxGeometry(5, 0.1, 7);
     const materialPlane = new MeshStandardMaterial({ color: 0xaaaaaa });
@@ -40,24 +43,36 @@ export class TestSceneC {
 
 
     ThreeC.addToScene(cube);
-    ThreeC.addToScene(plane);
+    // ThreeC.addToScene(plane);
   }
 
   private static createMap() {
-    // const characterMesh = ThreeC.getObject("character");
-    // characterMesh.position.set(1, 0, 4);
-    // characterMesh.rotation.y = Math.PI;
-    
     const mapMesh = ThreeC.getObject("map");
-
-    // ThreeC.addToScene(characterMesh);
+    addBoundingBoxHelper(mapMesh, 0x00ff00);
     ThreeC.addToScene(mapMesh);
+    console.log(mapMesh.position)
 
+    const mapPhysics = new PhysicsBody(
+      mapMesh,
+      false,
+      0,
+      PhysicsLayer.Wall,
+      PhysicsLayer.Player
+    );
 
-    // const cam = CameraC.getCamera<PerspectiveCamera>();
-    // cam.position.set(-1, 2, 7);
-    // cam.lookAt(characterMesh.position);
-    // cam.updateProjectionMatrix();
+    (mapPhysics.getPhysicsBody() as any).userData = { name: "map" }
+
+    const boxes = []
+
+    mapMesh.traverse((child: any) => {
+      if (child.isMesh && child.name.startsWith("Wooden_Box_mesh")
+        
+      ) {
+        boxes.push(child)
+      }
+    });
+
+    console.log(boxes)
   }
 
   private static InitPlayer() {

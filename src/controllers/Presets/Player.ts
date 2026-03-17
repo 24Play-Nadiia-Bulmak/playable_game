@@ -11,9 +11,10 @@ import { PlayerInput } from "./Input/PlayerInput";
 import { MoveC } from "./Movment/MoveC";
 import { Vec3 } from "cannon-es";
 import { contain } from "three/src/extras/TextureUtils";
-import { Vector3CToT, Vector3TToC } from "./Helper";
+import { addWireframeHelper, Vector3CToT, Vector3TToC } from "./Helper";
 import { RotationC } from "./Movment/RotationC";
 import { FollowCameraC } from "./Movment/CameraMovment/FollowCamera";
+import * as THREE from 'three';
 
 export class Player {
     private static inited: boolean = false;
@@ -59,6 +60,7 @@ export class Player {
             PhysicsLayer.Player,
             PhysicsLayer.Wall,
         );
+        (this.physics.getPhysicsBody() as any).userData = { name: "player" };
     }
 
     private static StartRunning() {
@@ -73,6 +75,9 @@ export class Player {
         this.isRunning = false;
     }
 
+    private static checkCollision() {
+    }
+
     private static set AnimationValue(value: number) {
         this.character.AnimationSpeed = value;
         this.character.AnimationWeight = value * 12.5 + 87.5;
@@ -81,6 +86,8 @@ export class Player {
     private static Update(delta: number) {
         const diraction = this.movement.Diraction;
         const weight = this.movement.Weight;
+        const characterBox = new THREE.Box3().setFromObject(this.character.tObj);
+
 
         if (diraction.length() > 0) {
             this.StartRunning();
@@ -88,12 +95,16 @@ export class Player {
         }
         else this.StopRunning();
 
-
-
         const cPos = Vector3TToC(diraction);
-
         this.physics.getPhysicsBody().velocity.copy(cPos);
         this.MoveVisual(delta);
+
+        
+        //         const body = this.physics.getPhysicsBody();
+
+        // body.addEventListener("collideStart", (event: any) => {
+        //     console.log("Player collided with:", (event.body as any).userData?.name || event.body.id, event.body, Date.now());
+        // });
     }
 
     private static MoveVisual(delta: number) {
@@ -102,6 +113,5 @@ export class Player {
 
         this.container.position.lerp(targetPos, delta * lerpSpeed)
     }
-
-
 }
+

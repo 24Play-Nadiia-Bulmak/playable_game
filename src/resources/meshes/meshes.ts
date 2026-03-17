@@ -11,7 +11,7 @@ export const meshes : ConvertResourceType = {
     },
         {
       name: "map",
-      value: ConvertToBase64WhenRelease('./models/ZombiePunk_Map.glb'),
+      value: ConvertToBase64WhenRelease('./models/scene.glb'),
     },
   ],
   loader: Template3d.meshLoader

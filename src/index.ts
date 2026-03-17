@@ -16,7 +16,7 @@ window.setupConfig = async function (config) {
     redirectOptions: {},
     ticker: Template3d.ticker,
     debug: {
-      physics: false,
+      physics: true,
       // set true if you want to enable physics debugger
       logger: false // set true if you want to enable logger
     }

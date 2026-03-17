@@ -1,7 +1,7 @@
 import { Delegate, Helper, Template, UpdateController } from "@24tools/playable_template";
 import { Object3D, Vector3 } from "three";
 import { ThreeC } from "../../../ThreeC";
-import { CameraC } from "c:/Users/n.bulmak/Downloads/top_down_movment/top_down_movment/src/controllers/CameraC";
+import { CameraC } from "../../../CameraC";
 
 export class FollowCameraC {
     private static updateDelegate: Delegate<number>;
@@ -15,10 +15,6 @@ export class FollowCameraC {
     static Init(target: Object3D) {
         this.target = target;
         this.offset = this.Offset;
-
-        console.log(target);
-
-
         this.updateDelegate = new Delegate<number>(this.Update.bind(this));
         UpdateController.Instance.onUpdate.addListener(this.updateDelegate);
 
@@ -33,7 +29,7 @@ export class FollowCameraC {
         this.mainContainer.position.x += this.Offset.x;
         this.mainContainer.position.z += this.Offset.z;
 
-        this.cameraContainer.position.y += this.Offset.y;
+        this.cameraContainer.position.y += this.Offset.y * 5;
     }
 
     private static Update(delta: number) {
