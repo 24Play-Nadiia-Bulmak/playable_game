@@ -13,6 +13,7 @@ export class PlayerInput implements IMoveInput {
         const joystickSizeAspect = 0.2;
         const fadeTime = 200;
         const options: JoystickManagerOptions = {
+            color: "white",
             zone: document.getElementById("joystick_zone") as HTMLElement,
             size: minSize * joystickSizeAspect,
             restJoystick: true,

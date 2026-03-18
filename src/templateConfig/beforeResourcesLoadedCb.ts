@@ -15,17 +15,18 @@ import { Color } from "three";
 import { Vec3 } from "cannon-es";
 import { PlayerInput } from "../controllers/Presets/Input/PlayerInput";
 export const beforeResourcesLoadedCb = () => {
-  FilterScene.init();
-  InstallBanner.init();
+  FilterScene.init(); //ініт пост-ефектів(блюр, колір, затемнення)
+  InstallBanner.init(); // CTA, має з'явитись до гри
 
-  Template3d.init();
-  CameraC_internal.init(CameraType.perspective);
-  CameraC.setCamera(window.screenSize.portrait);
-  ThreeC_internal.init();
+  Template3d.init(); //ініт менеджера завантаження ресурсів та лоадерів для 3д ресурсів
+  CameraC_internal.init(CameraType.perspective); //(perspective або orthographic)
+  CameraC.setCamera(window.screenSize.portrait); 
+  ThreeC_internal.init(); //ініт рендера, сцени, базового світла та ресайзу
   ThreeC.createBaseLights();
   ThreeC.setupDirectionalLight();
 
   let physicsWorld = Physics_internal.init(new Vec3(0, 0, 0));
+  // gravitation - -9.81 for earth, -3.71 for mars, -1.62 for moon
 
   // example of using joystick. Uncomment if you need joystick
 
@@ -43,7 +44,7 @@ export const beforeResourcesLoadedCb = () => {
   //   console.log('onJoysticMove', event, data);
   // })
 
-  Template.updateVariableConfig.addDelegate(([category, variable, value]) => {
+  Template.updateVariableConfig.addDelegate(([category, variable, value]) => { // ця функція буде викликатись при зміні будь-якої змінної в конфігу, в залежності від категорії та назви змінної можна виконувати якісь дії, наприклад змінювати параметри світла чи камери
     if (category === "global") {
       switch (variable) {
         case "light_intensity":

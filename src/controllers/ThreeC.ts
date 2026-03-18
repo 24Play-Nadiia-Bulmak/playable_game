@@ -9,7 +9,7 @@ export class ThreeC extends ThreeC_internal {
     this.defaultAmbientLight = new AmbientLight(0xffffff, 1);
 
     this.defaultAmbientLight.color = new Color().setHex(
-      Number(Template.getValue<ColorFormat>("global", "light_color"))
+      Number(Template.getValue<ColorFormat>("global", "light_color")) // бере з конфігу
     );
     this.defaultAmbientLight.intensity = 
       Template.getValue<number>("global", "light_intensity")

@@ -10,6 +10,7 @@ export class TestSceneC {
   static init() {
     this.createMap();
     this.InitPlayer();
+    // this.addPhysics();
 
     InputC.onTouchDown.addDelegate((event) => {
       // console.log("onMouseDown", event);
@@ -50,15 +51,33 @@ export class TestSceneC {
     const mapMesh = ThreeC.getObject("map");
     addBoundingBoxHelper(mapMesh, 0x00ff00);
     ThreeC.addToScene(mapMesh);
-    console.log(mapMesh.position)
+  }
 
-    const mapPhysics = new PhysicsBody(
+  private static addPhysics() {
+    const mapMesh = ThreeC.getObject("map");
+    const characterMesh = ThreeC.getObject("character");
+
+    const mapPhysics = new PhysicsBody( 
       mapMesh,
       false,
       0,
       PhysicsLayer.Wall,
       PhysicsLayer.Player
     );
+
+    const characterPhysics = new PhysicsBody(
+      characterMesh,
+      false,
+      1,
+      PhysicsLayer.Player,
+      PhysicsLayer.Wall
+    );
+
+    characterPhysics.getPhysicsBody().addEventListener("collide", (e) => {
+      if (e.body.collisionFilterGroup === PhysicsLayer.Trigger) {
+        console.log("trigger entered");
+      }
+    });
 
     (mapPhysics.getPhysicsBody() as any).userData = { name: "map" }
 
@@ -73,6 +92,7 @@ export class TestSceneC {
     });
 
     console.log(boxes)
+
   }
 
   private static InitPlayer() {
