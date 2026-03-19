@@ -37,7 +37,7 @@ export class Character {
 
     ThreeC.addToScene(tObj);
     ThreeC.addAnimMixer(animMixer);
-
+console.log(this.animationList);
     return this;
   }
 
@@ -54,6 +54,7 @@ export class Character {
   playAnimation(anim_id: number, one_time: boolean = false, fade = 0.25, randomStart = false) {
     let oldClipAction: null | AnimationAction = this.curClipAction;
     var clipAction = this.animMixer.clipAction(this.animationList[anim_id]);
+    
 
     if (one_time) {
       clipAction.clampWhenFinished = true;

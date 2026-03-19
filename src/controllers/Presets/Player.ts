@@ -19,6 +19,7 @@ import * as THREE from 'three';
 export class Player {
     private static inited: boolean = false;
     private static isRunning: boolean = false;
+    private static IsAttacking:boolean = false;
 
     private static updateDelegate: Delegate<number>;
 
@@ -82,6 +83,19 @@ export class Player {
         this.character.playAnimation(BaseAnimation.Idle);
         this.AnimationValue = 1;
         this.isRunning = false;
+    }
+
+    private static StartBiting() {
+        if (!this.IsAttacking) return;
+        this.character.playAnimation(BaseAnimation.Bite);
+        this.IsAttacking = true;
+    }
+
+    private static StopBiting() {
+        if (this.IsAttacking) return;
+        this.character.playAnimation(BaseAnimation.Idle);
+        this.AnimationValue = 1;
+        this.IsAttacking = false;
     }
 
     private static checkCollision() {
