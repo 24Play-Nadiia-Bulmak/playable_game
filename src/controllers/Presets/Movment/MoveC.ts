@@ -5,16 +5,18 @@ import { Vector3 } from "three";
 export class MoveC {
     private input: IMoveInput;
     private speed: number = 5;
+    private slowDownIndex: number = 1.5;
     private updateDelegate: Delegate<number>;
     private moveDiraction: Vector3 = new Vector3();
     get Diraction() { return this.moveDiraction };
-    get Weight() { return this.moveDiraction.length() / this.speed };
+    get Weight() { return this.moveDiraction.length() / (this.speed * this.slowDownIndex) };
 
-    constructor(Input: IMoveInput, speed: number = 5) {
+    constructor(Input: IMoveInput, speed: number = 5, slowDownIndex: number = 1.5) {
         this.updateDelegate = new Delegate<number>(this.update.bind(this));
         UpdateController.Instance.onUpdate.addListener(this.updateDelegate);
         this.input = Input;
         this.speed = speed;
+        this.slowDownIndex = slowDownIndex;
     }
 
     private update(delta: number) {

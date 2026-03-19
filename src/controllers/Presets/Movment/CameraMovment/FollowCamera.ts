@@ -2,6 +2,8 @@ import { Delegate, Helper, Template, UpdateController } from "@24tools/playable_
 import { Object3D, Vector3 } from "three";
 import { ThreeC } from "../../../ThreeC";
 import { CameraC } from "../../../CameraC";
+import { Player } from "../../Player";
+import { PlayerInput } from "../../Input/PlayerInput";
 
 export class FollowCameraC {
     private static updateDelegate: Delegate<number>;
@@ -11,6 +13,7 @@ export class FollowCameraC {
     static mainContainer: Object3D = new Object3D();
     static cameraContainer: Object3D = new Object3D();
     static cameraRotation: Object3D = new Object3D();
+    static oldDir: Vector3;
 
     static Init(target: Object3D) {
         this.target = target;
@@ -29,11 +32,19 @@ export class FollowCameraC {
         this.mainContainer.position.x += this.Offset.x;
         this.mainContainer.position.z += this.Offset.z;
 
-        this.cameraContainer.position.y += this.Offset.y * 5;
+        this.cameraContainer.position.y += this.Offset.y;
+
+        this.mainContainer.lookAt(this.target.position);
+        this.cameraContainer.lookAt(this.target.position);
     }
 
     private static Update(delta: number) {
         if (!this.target.position) return;
+
+        const dir = Player.diraction.clone().normalize(); // тільки напрямок, без сили руху
+        if(!this.oldDir){
+            this.oldDir = dir.clone();
+        }
 
         const oldPos = this.mainContainer.position.clone();
         this.mainContainer.position.copy(this.target.position);
@@ -41,13 +52,15 @@ export class FollowCameraC {
         this.mainContainer.position.z += this.Offset.z;
         const targetPos = this.mainContainer.position.clone();
 
-        this.mainContainer.lookAt(this.target.position);
-        this.cameraContainer.lookAt(this.target.position);
-
-
-        const lerpSpeed = 10;
+        if(dir.length() > 0) {
+            this.oldDir.copy(dir);
+            targetPos.add(dir.multiplyScalar(2)); // зміщуємо цільову позицію в напрямку руху гравця, щоб камера дивилася трохи вперед
+        }else{
+            targetPos.add(this.oldDir.clone().multiplyScalar(2)); // зміщуємо цільову позицію в напрямку руху гравця, щоб камера дивилася трохи вперед
+        }
+       
+        const lerpSpeed = 3;
         this.mainContainer.position.lerpVectors(oldPos, targetPos, delta * lerpSpeed)
-
     }
 
     static get RotationCorection() {

@@ -30,6 +30,10 @@ export class Player {
     static character: Character;
     static physics: PhysicsBody;
 
+    static get diraction() {
+        return this.input.CurrentDirection;
+    }
+
     static Init() {
         if (this.inited) return;
         this.inited = true
@@ -42,9 +46,10 @@ export class Player {
 
         this.InitPhisic();
         const input = new PlayerInput();
-        // const speed = 1;
-        this.movement = new MoveC(input/*, speed*/);
-        this.rotation = new RotationC(this.container, input/*, speed*/);
+        this.input = input;
+        const speed = 3;
+        this.movement = new MoveC(this.input, speed);
+        this.rotation = new RotationC(this.container, this.input, speed);
 
         this.updateDelegate = new Delegate<number>((delta) => this.Update(delta)); // прив'язуємо оновлення гравця до загального оновлення гри
         UpdateController.Instance.onUpdate.addListener(this.updateDelegate); // додаємо наш метод оновлення до контролера оновлення, щоб він викликався кожного кадру
@@ -77,6 +82,7 @@ export class Player {
     }
 
     private static checkCollision() {
+        // return true;
     }
 
     private static set AnimationValue(value: number) {
@@ -88,7 +94,6 @@ export class Player {
         const diraction = this.movement.Diraction;
         const weight = this.movement.Weight;
         const characterBox = new THREE.Box3().setFromObject(this.character.tObj);
-
 
         if (diraction.length() > 0) {
             this.StartRunning();
@@ -102,7 +107,7 @@ export class Player {
     }
 
     private static MoveVisual(delta: number) {
-        const lerpSpeed = 10;
+        const lerpSpeed = 20;
         const targetPos = (Vector3CToT(this.physics.getPhysicsBody().position));
 
         this.container.position.lerp(targetPos, delta * lerpSpeed)

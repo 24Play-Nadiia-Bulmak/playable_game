@@ -49,51 +49,51 @@ export class TestSceneC {
 
   private static createMap() {
     const mapMesh = ThreeC.getObject("map");
-    addBoundingBoxHelper(mapMesh, 0x00ff00);
+    // addBoundingBoxHelper(mapMesh, 0x00ff00);
     ThreeC.addToScene(mapMesh);
   }
 
-  private static addPhysics() {
-    const mapMesh = ThreeC.getObject("map");
-    const characterMesh = ThreeC.getObject("character");
+  // private static addPhysics() {
+  //   const mapMesh = ThreeC.getObject("map");
+  //   const characterMesh = ThreeC.getObject("character");
 
-    const mapPhysics = new PhysicsBody( 
-      mapMesh,
-      false,
-      0,
-      PhysicsLayer.Wall,
-      PhysicsLayer.Player
-    );
+  //   const mapPhysics = new PhysicsBody( 
+  //     mapMesh,
+  //     false,
+  //     0,
+  //     PhysicsLayer.Wall,
+  //     PhysicsLayer.Player
+  //   );
 
-    const characterPhysics = new PhysicsBody(
-      characterMesh,
-      false,
-      1,
-      PhysicsLayer.Player,
-      PhysicsLayer.Wall
-    );
+  //   const characterPhysics = new PhysicsBody(
+  //     characterMesh,
+  //     false,
+  //     1,
+  //     PhysicsLayer.Player,
+  //     PhysicsLayer.Wall
+  //   );
 
-    characterPhysics.getPhysicsBody().addEventListener("collide", (e) => {
-      if (e.body.collisionFilterGroup === PhysicsLayer.Trigger) {
-        console.log("trigger entered");
-      }
-    });
+  //   characterPhysics.getPhysicsBody().addEventListener("collide", (e) => {
+  //     if (e.body.collisionFilterGroup === PhysicsLayer.Trigger) {
+  //       console.log("trigger entered");
+  //     }
+  //   });
 
-    (mapPhysics.getPhysicsBody() as any).userData = { name: "map" }
+  //   (mapPhysics.getPhysicsBody() as any).userData = { name: "map" }
 
-    const boxes = []
+  //   const boxes = []
 
-    mapMesh.traverse((child: any) => {
-      if (child.isMesh && child.name.startsWith("Wooden_Box_mesh")
+  //   mapMesh.traverse((child: any) => {
+  //     if (child.isMesh && child.name.startsWith("Wooden_Box_mesh")
         
-      ) {
-        boxes.push(child)
-      }
-    });
+  //     ) {
+  //       boxes.push(child)
+  //     }
+  //   });
 
-    console.log(boxes)
+  //   console.log(boxes)
 
-  }
+  // }
 
   private static InitPlayer() {
     Player.Init();
