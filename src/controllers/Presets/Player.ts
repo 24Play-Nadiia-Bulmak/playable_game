@@ -44,6 +44,8 @@ export class Player {
         this.container.add(this.character.tObj); // контейнер для візуального представлення гравця, який буде рухатися по фізиці, а не сама модель, щоб не було проблем з колізією та анімацією
         ThreeC.addToScene(this.container);
 
+        this.container.position.set(0, 0, 0);
+
         this.InitPhisic();
         const input = new PlayerInput();
         this.input = input;
@@ -55,6 +57,7 @@ export class Player {
         UpdateController.Instance.onUpdate.addListener(this.updateDelegate); // додаємо наш метод оновлення до контролера оновлення, щоб він викликався кожного кадру
 
         FollowCameraC.Init(this.container); // ініціалізуємо камеру, щоб вона слідувала за гравцем
+        // this.checkCollision();
     }
 
     private static InitPhisic() {
@@ -82,7 +85,13 @@ export class Player {
     }
 
     private static checkCollision() {
-        // return true;
+        this.physics.getPhysicsBody().addEventListener("collide", (e) => {
+            const name = (e.body as any).userData?.name;
+            if (e.body.collisionFilterGroup === PhysicsLayer.Wall) {
+                console.log("collided with wall:", name);
+                return true;
+            }
+        });
     }
 
     private static set AnimationValue(value: number) {

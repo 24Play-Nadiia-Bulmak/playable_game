@@ -49,51 +49,22 @@ export class TestSceneC {
 
   private static createMap() {
     const mapMesh = ThreeC.getObject("map");
-    // addBoundingBoxHelper(mapMesh, 0x00ff00);
     ThreeC.addToScene(mapMesh);
+
+    mapMesh.traverse((child: any) => {
+      if (child.isMesh && child.name.startsWith("Wooden_Box_mesh")) {
+        const boxPhysics = new PhysicsBody(
+          child,
+          false,  // не тригер — реальна стіна
+          0,      // маса 0 = статичний об'єкт
+          PhysicsLayer.Wall,
+          PhysicsLayer.Player,
+        );
+        (boxPhysics.getPhysicsBody() as any).userData = { name: child.name };
+        addBoundingBoxHelper(child, 0xff0000);
+      }
+    });
   }
-
-  // private static addPhysics() {
-  //   const mapMesh = ThreeC.getObject("map");
-  //   const characterMesh = ThreeC.getObject("character");
-
-  //   const mapPhysics = new PhysicsBody( 
-  //     mapMesh,
-  //     false,
-  //     0,
-  //     PhysicsLayer.Wall,
-  //     PhysicsLayer.Player
-  //   );
-
-  //   const characterPhysics = new PhysicsBody(
-  //     characterMesh,
-  //     false,
-  //     1,
-  //     PhysicsLayer.Player,
-  //     PhysicsLayer.Wall
-  //   );
-
-  //   characterPhysics.getPhysicsBody().addEventListener("collide", (e) => {
-  //     if (e.body.collisionFilterGroup === PhysicsLayer.Trigger) {
-  //       console.log("trigger entered");
-  //     }
-  //   });
-
-  //   (mapPhysics.getPhysicsBody() as any).userData = { name: "map" }
-
-  //   const boxes = []
-
-  //   mapMesh.traverse((child: any) => {
-  //     if (child.isMesh && child.name.startsWith("Wooden_Box_mesh")
-        
-  //     ) {
-  //       boxes.push(child)
-  //     }
-  //   });
-
-  //   console.log(boxes)
-
-  // }
 
   private static InitPlayer() {
     Player.Init();
