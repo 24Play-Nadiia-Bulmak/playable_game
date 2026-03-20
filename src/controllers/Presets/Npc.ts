@@ -68,7 +68,13 @@ import { NpcAnimation } from "./Enums/NpcAnimation";
                     0.3,   // sphere radius
                     true,  // kinematic — гравець відштовхується від NPC, але NPC не отримує імпульсів
                 );
-                (this.physics.getPhysicsBody() as any).userData = { name: "npc" };
+
+                const body = this.physics.getPhysicsBody();
+                // body.userData = { name: "npc" };
+
+                body.angularFactor.set(0, 0, 0);   // блокуємо обертання від зіткнень
+                body.linearDamping = 0.9;          // затухання — персонаж не ковзає після зупинки
+                body.sleepSpeedLimit = 0;       // body.sleepTimeLimit = 0.1; // NPC може заснути, якщо не рухається протягом 0.1 секунди
             }
         
             private UpdateMovementState(dir: THREE.Vector3, weight: number) {

@@ -6,9 +6,13 @@ import { Player } from "./Presets/Player";
 import { PhysicsBody, PhysicsLayer } from "./PhysicsC";
 import { addBoundingBoxHelper } from "./Presets/Helper";
 import { Npc } from "./Presets/Npc";
+import { TriggerSystem } from "./Presets/Trigger/TriggerSystem";
+import { TriggerZone } from "./Presets/Trigger/TriggerZone";
+import { MovementState } from "./Presets/Enums/MovementState";
 
 export class TestSceneC {
   static init() {
+    TriggerSystem.init();
     this.createMap();
     this.InitPlayer();
     this.initNpc(5);
@@ -54,6 +58,8 @@ export class TestSceneC {
 
     mapMesh.traverse((child: any) => {
       if (child.isMesh && child.name.startsWith("Wooden_Box_mesh")) {
+        // console.log(child);
+
         const boxPhysics = new PhysicsBody(
           child,
           false,
@@ -61,10 +67,31 @@ export class TestSceneC {
           PhysicsLayer.Wall,
           PhysicsLayer.Player | PhysicsLayer.Npc,
         );
-        (boxPhysics.getPhysicsBody() as any).userData = { name: child.name };
+
+        (boxPhysics.getPhysicsBody() as any).userData = { name: child.name, isCollider: true };
         addBoundingBoxHelper(child, 0xff0000);
+
+        const woodTrigger = new TriggerZone(
+          child.getWorldPosition(new Vector3()),
+          1.5,                     // радіус 1.5 метри
+          "wood",
+          true                     // debug wireframe
+        );
+
+        woodTrigger.onEnter = () => {
+          console.log("Гравець увійшов у зону ресурсу: wood");
+          Player.SetState(MovementState.Loot, 1);
+      };
+        woodTrigger.onExit = () => {
+            console.log("Гравець вийшов із зони");
+            Player.SetState(MovementState.Idle, 1);
+        };
+
+        TriggerSystem.addTrigger(woodTrigger);
       }
     });
+
+
   }
 
   private static InitPlayer() {

@@ -14,6 +14,7 @@ import { RotationC } from "./Movment/RotationC";
 import { FollowCameraC } from "./Movment/CameraMovment/FollowCamera";
 import * as THREE from 'three';
 import { MovementState } from "./Enums/MovementState";
+import { TriggerZone } from "./Trigger/TriggerZone";
 
 export class Player {
     private static inited: boolean = false;
@@ -33,6 +34,10 @@ export class Player {
 
     static get diraction() {
         return this.input.CurrentDirection;
+    }
+
+    static get Position() {
+        return this.container.position;      
     }
 
     static Init() {
@@ -70,7 +75,12 @@ export class Player {
             PhysicsLayer.Player,
             PhysicsLayer.Wall | PhysicsLayer.Npc,
         );
-        (this.physics.getPhysicsBody() as any).userData = { name: "player" }; // додаємо userData для можливості ідентифікувати це тіло при колізії
+        const body = this.physics.getPhysicsBody();
+        // body.userData = { name: "player" };
+
+        body.angularFactor.set(0, 0, 0);   // блокуємо обертання від зіткнень
+        body.linearDamping = 0.9;          // затухання — персонаж не ковзає після зупинки
+        body.sleepSpeedLimit = 0;  
     }
 
     private static UpdateMovementState(dir: THREE.Vector3, weight: number) {
@@ -86,6 +96,14 @@ export class Player {
         const fwdDot = norm.dot(forward);
         const rightDot = norm.dot(right);
 
+        if (TriggerZone.isPlayerInside) {
+            this.StartLooting();
+            this.IsAttacking = true;
+        } else {
+            this.StopLooting();
+            this.IsAttacking = false;
+        }
+
         let state: MovementState;
         if (fwdDot > 0.5) {
             state = MovementState.Forward;
@@ -98,7 +116,7 @@ export class Player {
         this.SetState(state, weight);
     }
 
-    private static SetState(state: MovementState, weight: number) {
+    static SetState(state: MovementState, weight: number) {
         this.rotation.enabled = (state === MovementState.Forward);
 
         if (state !== this.movementState) {
@@ -108,6 +126,7 @@ export class Player {
                 case MovementState.StrafeRight: this.character.playAnimation(BaseAnimation.PistolRight); break;
                 case MovementState.StrafeLeft:  this.character.playAnimation(BaseAnimation.PistolLeft); break;
                 case MovementState.Back:        this.character.playAnimation(BaseAnimation.PistolBack); break;
+                case MovementState.Loot:        this.character.playAnimation(BaseAnimation.Loot); break;
             }
             this.movementState = state;
         }

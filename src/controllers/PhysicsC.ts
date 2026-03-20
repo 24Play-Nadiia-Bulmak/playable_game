@@ -27,7 +27,7 @@ export class PhysicsBody {
     player_sphere: number = 0.3,
     isKinematic: boolean = false
   ) {
-    let isPlayer = col_group === PhysicsLayer.Player; // для гравця сфера, для інших об'єктів коробка, але це можна змінити під свої потреби
+    let isPlayer = col_group === PhysicsLayer.Player || col_group === PhysicsLayer.Npc; // для гравця сфера, для інших об'єктів коробка, але це можна змінити під свої потреби
 
     let oldQuaternion = threeObj.quaternion.clone(); // для правильного розміру колізії, бо модель може бути повернута, а фізичне тіло має бути вирівняне по осях
 
