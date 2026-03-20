@@ -9,9 +9,13 @@ export const meshes : ConvertResourceType = {
       name: "character",
       value: ConvertToBase64WhenRelease('./models/ZombiePunk_Character.glb'), // ConvertToBase64WhenRelease!
     },
+        {
+      name: "npc",
+      value: ConvertToBase64WhenRelease('./models/npc.glb'),
+    },
     {
       name: "map",
-      value: ConvertToBase64WhenRelease('./models/scene.glb'), // with “resources/..” ???
+      value: ConvertToBase64WhenRelease('./models/scene.glb'),
     },
   ],
   loader: Template3d.meshLoader

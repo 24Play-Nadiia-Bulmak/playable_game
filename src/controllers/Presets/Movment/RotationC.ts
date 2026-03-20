@@ -9,24 +9,28 @@ export class RotationC {
     private updateDelegate: Delegate<number>;
     private currentQ: Quaternion = new Quaternion();
     private targetQ: Quaternion = new Quaternion();
+    public enabled: boolean = true;
 
-    constructor(target: Object3D, Input: IMoveInput, speed: number = 5) {
+    constructor(target: Object3D, Input: IMoveInput, speed: number = 5, enabled: boolean = true) {
         this.updateDelegate = new Delegate<number>(this.update.bind(this));
         UpdateController.Instance.onUpdate.addListener(this.updateDelegate);
         this.input = Input;
         this.speed = speed;
         this.target = target;
+        this.enabled = enabled;
         this.currentQ.copy(this.target.quaternion);
         this.targetQ.copy(this.target.quaternion);
     }
 
     private update(delta: number) {
-        const loockAtStep = this.input.CurrentDirection;
-        if (loockAtStep.length() != 0) {
-            const loockAtPoint = this.target.position.clone().add(loockAtStep);
-            this.target.lookAt(loockAtPoint);
-            this.targetQ.copy(this.target.quaternion);
-            this.target.quaternion.copy(this.currentQ);
+        if (this.enabled) {
+            const loockAtStep = this.input.CurrentDirection;
+            if (loockAtStep.length() != 0) {
+                const loockAtPoint = this.target.position.clone().add(loockAtStep);
+                this.target.lookAt(loockAtPoint);
+                this.targetQ.copy(this.target.quaternion);
+                this.target.quaternion.copy(this.currentQ);
+            }
         }
 
         this.target.quaternion.slerp(this.targetQ, delta * this.speed);

@@ -5,12 +5,13 @@ import { CameraC } from "./CameraC";
 import { Player } from "./Presets/Player";
 import { PhysicsBody, PhysicsLayer } from "./PhysicsC";
 import { addBoundingBoxHelper } from "./Presets/Helper";
+import { Npc } from "./Presets/Npc";
 
 export class TestSceneC {
   static init() {
     this.createMap();
     this.InitPlayer();
-    // this.addPhysics();
+    this.initNpc(5);
 
     InputC.onTouchDown.addDelegate((event) => {
       // console.log("onMouseDown", event);
@@ -55,10 +56,10 @@ export class TestSceneC {
       if (child.isMesh && child.name.startsWith("Wooden_Box_mesh")) {
         const boxPhysics = new PhysicsBody(
           child,
-          false,  // не тригер — реальна стіна
-          0,      // маса 0 = статичний об'єкт
+          false,
+          0,
           PhysicsLayer.Wall,
-          PhysicsLayer.Player,
+          PhysicsLayer.Player | PhysicsLayer.Npc,
         );
         (boxPhysics.getPhysicsBody() as any).userData = { name: child.name };
         addBoundingBoxHelper(child, 0xff0000);
@@ -68,5 +69,11 @@ export class TestSceneC {
 
   private static InitPlayer() {
     Player.Init();
+  }
+
+  private static initNpc(count: number = 1) {
+    for (let i = 0; i < count; i++) {
+      new Npc();
+    }   
   }
 }

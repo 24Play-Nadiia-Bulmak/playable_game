@@ -8,9 +8,10 @@ import { Body, Box, Quaternion, Sphere, Vec3 } from "cannon-es";
 
 export enum PhysicsLayer {
   Player = 1,
-  Wall = 2,
-  Trigger = 4,
-  Enemy = 8,
+  Npc = 2,
+  Wall = 4,
+  Trigger = 8,
+  Enemy = 16,
 }
 
 export class PhysicsBody {
@@ -23,7 +24,8 @@ export class PhysicsBody {
     mass: number,
     col_group: PhysicsLayer,
     col_mask: PhysicsLayer,
-    player_sphere: number = 0.3
+    player_sphere: number = 0.3,
+    isKinematic: boolean = false
   ) {
     let isPlayer = col_group === PhysicsLayer.Player; // для гравця сфера, для інших об'єктів коробка, але це можна змінити під свої потреби
 
@@ -76,7 +78,11 @@ export class PhysicsBody {
     // }
 
     Physics_internal.physicsWorld &&
-      Physics_internal.physicsWorld.addBody(this.body); // додавання тіла в світ фізики
+      Physics_internal.physicsWorld.addBody(this.body);
+
+    if (isKinematic) {
+      this.body.type = Body.KINEMATIC; // рухається через velocity, але не отримує імпульсів від зіткнень
+    }
 
     return this;
   }
