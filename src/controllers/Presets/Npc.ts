@@ -13,6 +13,9 @@ import { Vector3CToT, Vector3TToC } from "./Helper";
 import { NpcMovementState } from "./Enums/MovementState";
 import * as THREE from 'three';
 import { NpcAnimation } from "./Enums/NpcAnimation";
+import { TriggerZone } from "./Trigger/TriggerZone";
+import { TriggerSystem } from "./Trigger/TriggerSystem";
+import { Player } from "./Player";
 
  export class Npc {
      private container: Object3D = new Object3D;
@@ -24,7 +27,12 @@ import { NpcAnimation } from "./Enums/NpcAnimation";
      private rotation: RotationC;
      
      private character: Character;
-     physics: PhysicsBody;
+     private physics!: PhysicsBody;
+     private triggerZone!: TriggerZone;
+
+     get Position() {
+         return this.container.position;      
+     }  
 
      get diraction() {
          return this.movement.Diraction;
@@ -56,6 +64,18 @@ import { NpcAnimation } from "./Enums/NpcAnimation";
 
          this.updateDelegate = new Delegate<number>((delta) => this.Update(delta));
          UpdateController.Instance.onUpdate.addListener(this.updateDelegate);
+
+         this.triggerZone = new TriggerZone(
+             this.container.position,
+             6,
+             "npc",
+             true,
+             this.container
+         );
+
+         this.triggerZone.onEnter = () => { Player.IsAttacking = true; };
+         this.triggerZone.onExit  = () => { Player.IsAttacking = false; };
+         TriggerSystem.addTrigger(this.triggerZone);
      }
 
             private InitPhisic() {

@@ -70,24 +70,17 @@ export class TestSceneC {
 
         (boxPhysics.getPhysicsBody() as any).userData = { name: child.name, isCollider: true };
         addBoundingBoxHelper(child, 0xff0000);
-
+        
         const woodTrigger = new TriggerZone(
           child.getWorldPosition(new Vector3()),
-          1.5,                     // радіус 1.5 метри
+          1.5,
           "wood",
-          true                     // debug wireframe
+          true
         );
-
-        woodTrigger.onEnter = () => {
-          console.log("Гравець увійшов у зону ресурсу: wood");
-          Player.SetState(MovementState.Loot, 1);
-      };
-        woodTrigger.onExit = () => {
-            console.log("Гравець вийшов із зони");
-            Player.SetState(MovementState.Idle, 1);
-        };
-
         TriggerSystem.addTrigger(woodTrigger);
+
+        woodTrigger.onEnter = () => { Player.IsLooting = true; };
+        woodTrigger.onExit  = () => { Player.IsLooting = false; };
       }
     });
 

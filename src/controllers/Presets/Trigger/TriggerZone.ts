@@ -1,4 +1,4 @@
-import { Vector3, Mesh, SphereGeometry, MeshBasicMaterial } from 'three';
+import { Vector3, Mesh, SphereGeometry, MeshBasicMaterial, Object3D } from 'three';
 import { ThreeC } from '../../ThreeC';
 
 export class TriggerZone {
@@ -6,17 +6,19 @@ export class TriggerZone {
     radius: number;
     resourceType: string;
     isPlayerInside: boolean = false;
-    
+
     onEnter: (() => void) | null = null;
     onExit: (() => void) | null = null;
 
+    private source: Object3D | null = null;
     private debugMesh: Mesh | null = null;
-    static isPlayerInside: any;
 
-    constructor(position: Vector3, radius: number, resourceType: string, debug = false) {
+    constructor(position: Vector3, radius: number, resourceType: string, debug = false, source: Object3D | null = null) {
         this.position = position.clone();
         this.radius = radius;
         this.resourceType = resourceType;
+        this.isPlayerInside = false;
+        this.source = source;
 
         if (debug) {
             const geo = new SphereGeometry(radius, 8, 8);
@@ -28,6 +30,13 @@ export class TriggerZone {
     }
 
     check(playerPosition: Vector3) {
+        if (this.source) {
+            this.source.getWorldPosition(this.position);
+            if (this.debugMesh) {
+                this.debugMesh.position.copy(this.position);
+            }
+        }
+
         const dist = playerPosition.distanceTo(this.position);
         const inside = dist < this.radius;
 

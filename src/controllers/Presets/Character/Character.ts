@@ -37,7 +37,7 @@ export class Character {
 
     ThreeC.addToScene(tObj);
     ThreeC.addAnimMixer(animMixer);
-// console.log(this.animationList);
+console.log(this.animationList);
     return this;
   }
 

@@ -10,6 +10,7 @@ export class RotationC {
     private currentQ: Quaternion = new Quaternion();
     private targetQ: Quaternion = new Quaternion();
     public enabled: boolean = true;
+    public lookAtTarget: Vector3 | null = null;
 
     constructor(target: Object3D, Input: IMoveInput, speed: number = 5, enabled: boolean = true) {
         this.updateDelegate = new Delegate<number>(this.update.bind(this));
@@ -23,7 +24,13 @@ export class RotationC {
     }
 
     private update(delta: number) {
-        if (this.enabled) {
+        if (this.lookAtTarget) {
+            const flatTarget = this.lookAtTarget.clone();
+            flatTarget.y = this.target.position.y; // ігноруємо вертикаль різницю
+            this.target.lookAt(flatTarget);
+            this.targetQ.copy(this.target.quaternion);
+            this.target.quaternion.copy(this.currentQ);
+        } else if (this.enabled) {
             const loockAtStep = this.input.CurrentDirection;
             if (loockAtStep.length() != 0) {
                 const loockAtPoint = this.target.position.clone().add(loockAtStep);

@@ -13,14 +13,16 @@ import { Vector3CToT, Vector3TToC } from "./Helper";
 import { RotationC } from "./Movment/RotationC";
 import { FollowCameraC } from "./Movment/CameraMovment/FollowCamera";
 import * as THREE from 'three';
-import { MovementState } from "./Enums/MovementState";
-import { TriggerZone } from "./Trigger/TriggerZone";
-
+import { StateMachine } from "./StateMachine/StateMachine";
+import { IdleState } from "./StateMachine/IdleState";
+import { RunState } from "./StateMachine/RunState";
+import { LootState } from "./StateMachine/LootState";
+import { AttackState } from "./StateMachine/AttackState";
+ 
 export class Player {
     private static inited: boolean = false;
-    private static movementState: MovementState = MovementState.Idle;
-    private static isJumping: boolean = false;
-    private static IsAttacking: boolean = false;
+    static IsAttacking: boolean = false;
+    static IsLooting: boolean = false;
 
     private static updateDelegate: Delegate<number>;
 
@@ -31,6 +33,12 @@ export class Player {
 
     static character: Character;
     static physics: PhysicsBody;
+
+    private static _stateMachine: StateMachine;
+    private static _idleState: IdleState;
+    private static _runState: RunState;
+    private static _lootState: LootState;
+    private static _attackState: AttackState;
 
     static get diraction() {
         return this.input.CurrentDirection;
@@ -55,16 +63,28 @@ export class Player {
         this.InitPhisic();
         const input = new PlayerInput();
         this.input = input;
-        const speed = 4;
+        const speed = 5;
         const acceleration = 3;
         // const deceleration = 20;
         this.movement = new MoveC(this.input, speed, acceleration);
-        this.rotation = new RotationC(this.container, this.input, speed, false); // not only forward moving
+        this.rotation = new RotationC(this.container, this.input, speed, true); // not only forward moving
+
+        this.InitStateMachine();
 
         this.updateDelegate = new Delegate<number>((delta) => this.Update(delta)); // прив'язуємо оновлення гравця до загального оновлення гри
         UpdateController.Instance.onUpdate.addListener(this.updateDelegate); // додаємо наш метод оновлення до контролера оновлення, щоб він викликався кожного кадру
 
         FollowCameraC.Init(this.container); // ініціалізуємо камеру, щоб вона слідувала за гравцем
+    }
+
+    private static InitStateMachine() {
+        this._idleState   = new IdleState(this.character);
+        this._runState    = new RunState(this.character, () => this.movement.Weight);
+        this._lootState   = new LootState(this.character, this.rotation, () => this.movement.Diraction.length() < 0.01);
+        this._attackState = new AttackState(this.character, this.rotation, this.container, () => this.movement.Diraction);
+
+        this._stateMachine = new StateMachine();
+        this._stateMachine.changeState(this._idleState);
     }
 
     private static InitPhisic() {
@@ -83,70 +103,33 @@ export class Player {
         body.sleepSpeedLimit = 0;  
     }
 
-    private static UpdateMovementState(dir: THREE.Vector3, weight: number) {
-        if (dir.length() < 0.01) {
-            this.SetState(MovementState.Idle, weight);
+    private static UpdateMovementState(dir: THREE.Vector3) {
+        const isStopped = dir.length() < 0.01;
+        const sm = this._stateMachine;
+
+        if (this.IsAttacking) {
+            if (sm.currentState !== this._attackState) {
+                sm.changeState(this._attackState);
+            }
             return;
         }
 
-        const norm = dir.clone().normalize();
-        const forward = new THREE.Vector3(0, 0, 1).applyQuaternion(this.container.quaternion);
-        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(this.container.quaternion);
-
-        const fwdDot = norm.dot(forward);
-        const rightDot = norm.dot(right);
-
-        if (TriggerZone.isPlayerInside) {
-            this.StartLooting();
-            this.IsAttacking = true;
-        } else {
-            this.StopLooting();
-            this.IsAttacking = false;
-        }
-
-        let state: MovementState;
-        if (fwdDot > 0.5) {
-            state = MovementState.Forward;
-        } else if (fwdDot < -0.5) {
-            state = MovementState.Back;
-        } else {
-            state = rightDot >= 0 ? MovementState.StrafeLeft : MovementState.StrafeRight;
-        }
-
-        this.SetState(state, weight);
-    }
-
-    static SetState(state: MovementState, weight: number) {
-        this.rotation.enabled = (state === MovementState.Forward);
-
-        if (state !== this.movementState) {
-            switch (state) {
-                case MovementState.Idle:        this.character.playAnimation(BaseAnimation.Idle); break;
-                case MovementState.Forward:     this.character.playAnimation(BaseAnimation.Run); break;
-                case MovementState.StrafeRight: this.character.playAnimation(BaseAnimation.PistolRight); break;
-                case MovementState.StrafeLeft:  this.character.playAnimation(BaseAnimation.PistolLeft); break;
-                case MovementState.Back:        this.character.playAnimation(BaseAnimation.PistolBack); break;
-                case MovementState.Loot:        this.character.playAnimation(BaseAnimation.Loot); break;
+        if (this.IsLooting) {
+            if (sm.currentState !== this._lootState) {
+                sm.changeState(this._lootState);
             }
-            this.movementState = state;
+            return;
         }
 
-        if (state !== MovementState.Idle) {
-            this.AnimationValue = weight;
+        if (isStopped) {
+            if (sm.currentState !== this._idleState) {
+                sm.changeState(this._idleState);
+            }
+        } else {
+            if (sm.currentState !== this._runState) {
+                sm.changeState(this._runState);
+            }
         }
-    }
-
-    private static StartLooting() {
-        if (this.IsAttacking) return;
-        this.character.playAnimation(BaseAnimation.Loot);
-        this.IsAttacking = true;
-    }
-
-    private static StopLooting() {
-        if (!this.IsAttacking) return;
-        this.character.playAnimation(BaseAnimation.Idle);
-        this.AnimationValue = 1;
-        this.IsAttacking = false;
     }
 
     private static checkCollision() {
@@ -159,16 +142,11 @@ export class Player {
         });
     }
 
-    private static set AnimationValue(value: number) {
-        this.character.AnimationSpeed = value;
-        this.character.AnimationWeight = value * 12.5 + 87.5;
-    }
-
     private static Update(delta: number) {
         const dir = this.movement.Diraction;
-        const weight = this.movement.Weight;
 
-        this.UpdateMovementState(dir, weight);
+        this.UpdateMovementState(dir);
+        this._stateMachine.update(delta);
 
         const cPos = Vector3TToC(dir);
         this.physics.getPhysicsBody().velocity.copy(cPos);
