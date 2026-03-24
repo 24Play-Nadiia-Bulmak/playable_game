@@ -6,6 +6,29 @@ import {
 import { Box3, Object3D, Vector3 } from "three";
 import { Body, Box, Quaternion, Sphere, Vec3 } from "cannon-es";
 
+/** Configures cannon-es world to use a fixed 1/60 timestep with at most 3 sub-steps per frame. */
+export class PhysicsC
+{
+    static initFixedStep(): void
+    {
+        if (Physics_internal.delegateId)
+        {
+            UpdateController.Instance.onUpdate.removeListeners(Physics_internal.delegateId);
+        }
+
+        UpdateController.Instance.onUpdate.addDelegate((_delta) =>
+        {
+            try
+            {
+                // cannon-es fixedStep tracks elapsed time internally;
+                // we only override dt and maxSubSteps.
+                Physics_internal.physicsWorld?.fixedStep(1 / 60, 3);
+            }
+            catch (e) { }
+        });
+    }
+}
+
 export enum PhysicsLayer {
   Player = 1,
   Npc = 2,

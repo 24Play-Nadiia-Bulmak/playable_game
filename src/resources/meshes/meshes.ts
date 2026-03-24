@@ -17,6 +17,10 @@ export const meshes : ConvertResourceType = {
       name: "map",
       value: ConvertToBase64WhenRelease('./models/scene.glb'),
     },
+    {
+      name: "wood_particle",
+      value: ConvertToBase64WhenRelease('./models/particle_1.glb'),
+    },
   ],
   loader: Template3d.meshLoader
 }// get/set with ResourcesC.getResource<GLTF>("mesh", name)

@@ -8,6 +8,7 @@ import {
   ThreeC_internal,
   FilterScene,
   InstallBanner,
+  TweenC  
 } from "@24tools/playable_template";
 import { CameraC } from "../controllers/CameraC";
 import { ThreeC } from "../controllers/ThreeC";
@@ -24,6 +25,7 @@ export const beforeResourcesLoadedCb = () => {
   ThreeC_internal.init(); //ініт рендера, сцени, базового світла та ресайзу
   ThreeC.createBaseLights();
   ThreeC.setupDirectionalLight();
+  TweenC.init();
 
   let physicsWorld = Physics_internal.init(new Vec3(0, 0, 0));
   // gravitation - -9.81 for earth, -3.71 for mars, -1.62 for moon

@@ -13,9 +13,9 @@ export class RunState implements IState {
     }
 
     onUpdate(_delta: number) {
-        const weight = this.getWeight();
-        this.character.AnimationSpeed = weight;
-        this.character.AnimationWeight = weight * 12.5 + 87.5;
+        // Synchronise animation playback speed with actual movement speed (0–1)
+        // so foot cycles match displacement and prevent the "skating" effect.
+        this.character.AnimationSpeed = this.getWeight();
     }
 
     onExit() {}

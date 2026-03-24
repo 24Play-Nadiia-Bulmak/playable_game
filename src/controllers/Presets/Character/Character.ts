@@ -51,6 +51,12 @@ console.log(this.animationList);
       this.curClipAction.weight = weight;
   }
 
+  /** Shows or hides a named child object inside the character hierarchy. */
+  setPartVisible(partName: string, visible: boolean) {
+    const part = this.tObj.getObjectByName(partName);
+    if (part) part.visible = visible;
+  }
+
   playAnimation(anim_id: number, one_time: boolean = false, fade = 0.25, randomStart = false) {
     let oldClipAction: null | AnimationAction = this.curClipAction;
     var clipAction = this.animMixer.clipAction(this.animationList[anim_id]);

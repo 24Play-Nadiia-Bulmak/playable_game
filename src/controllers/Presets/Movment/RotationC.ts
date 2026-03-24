@@ -26,7 +26,7 @@ export class RotationC {
     private update(delta: number) {
         if (this.lookAtTarget) {
             const flatTarget = this.lookAtTarget.clone();
-            flatTarget.y = this.target.position.y; // ігноруємо вертикаль різницю
+            flatTarget.y = this.target.position.y;
             this.target.lookAt(flatTarget);
             this.targetQ.copy(this.target.quaternion);
             this.target.quaternion.copy(this.currentQ);

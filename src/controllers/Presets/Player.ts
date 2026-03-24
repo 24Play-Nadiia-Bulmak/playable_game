@@ -13,16 +13,22 @@ import { Vector3CToT, Vector3TToC } from "./Helper";
 import { RotationC } from "./Movment/RotationC";
 import { FollowCameraC } from "./Movment/CameraMovment/FollowCamera";
 import * as THREE from 'three';
-import { StateMachine } from "./StateMachine/StateMachine";
+import { StateMachine, IState } from "./StateMachine/StateMachine";
 import { IdleState } from "./StateMachine/IdleState";
 import { RunState } from "./StateMachine/RunState";
 import { LootState } from "./StateMachine/LootState";
 import { AttackState } from "./StateMachine/AttackState";
+import { ResourseSystem } from "./ResourseSystem/ResourseSystem";
+import { TriggerSystem } from "./Trigger/TriggerSystem";
+import { HudC } from "./UI/HudC";
+
  
 export class Player {
     private static inited: boolean = false;
     static IsAttacking: boolean = false;
     static IsLooting: boolean = false;
+
+    static inventory: ResourseSystem;
 
     private static updateDelegate: Delegate<number>;
 
@@ -53,7 +59,7 @@ export class Player {
         this.inited = true
         const asset = ResourcesC.getResource<GLTF>(ResourcesType.Mesh, MeshType.Character)
         this.character = new Character(asset);
-
+console.log(this.character)
         this.character.playAnimation(BaseAnimation.Idle)
         this.container.add(this.character.tObj); // контейнер для візуального представлення гравця, який буде рухатися по фізиці, а не сама модель, щоб не було проблем з колізією та анімацією
         ThreeC.addToScene(this.container);
@@ -64,12 +70,15 @@ export class Player {
         const input = new PlayerInput();
         this.input = input;
         const speed = 5;
-        const acceleration = 3;
-        // const deceleration = 20;
-        this.movement = new MoveC(this.input, speed, acceleration);
-        this.rotation = new RotationC(this.container, this.input, speed, true); // not only forward moving
+        const rotationSpeed = 25; // high slerp factor for near-instant directional response
+        const acceleration = 20;
+        const deceleration = 40;
+        const stopDeceleration = 10; // smooth glide-to-stop when joystick is released
+        this.movement = new MoveC(this.input, speed, acceleration, deceleration);
+        this.rotation = new RotationC(this.container, this.input, rotationSpeed, true);
 
         this.InitStateMachine();
+        this.initInventory();
 
         this.updateDelegate = new Delegate<number>((delta) => this.Update(delta)); // прив'язуємо оновлення гравця до загального оновлення гри
         UpdateController.Instance.onUpdate.addListener(this.updateDelegate); // додаємо наш метод оновлення до контролера оновлення, щоб він викликався кожного кадру
@@ -80,11 +89,32 @@ export class Player {
     private static InitStateMachine() {
         this._idleState   = new IdleState(this.character);
         this._runState    = new RunState(this.character, () => this.movement.Weight);
-        this._lootState   = new LootState(this.character, this.rotation, () => this.movement.Diraction.length() < 0.01);
-        this._attackState = new AttackState(this.character, this.rotation, this.container, () => this.movement.Diraction);
+        this._lootState   = new LootState(this.character, this.rotation);
+        this._attackState = new AttackState(
+            this.character,
+            this.rotation,
+            this.container,
+            () => this.movement.Direction,
+            () => Player.dealAttackDamage(),
+        );
 
         this._stateMachine = new StateMachine();
+
+        // AttackState and LootState are mutually exclusive: attack takes priority via IsAttacking flag.
+        // LootState can escalate to AttackState (NPC enters while looting), but not the reverse.
+        this._stateMachine.setTransitionTable(new Map<IState, IState[]>([
+            [this._idleState,   [this._runState, this._lootState, this._attackState]],
+            [this._runState,    [this._idleState, this._lootState, this._attackState]],
+            [this._lootState,   [this._idleState, this._runState, this._attackState]],
+            [this._attackState, [this._idleState, this._runState]],
+        ]));
+
         this._stateMachine.changeState(this._idleState);
+    }
+
+    private static initInventory() {
+        this.inventory = new ResourseSystem();
+        HudC.init(this.inventory);
     }
 
     private static InitPhisic() {
@@ -98,8 +128,8 @@ export class Player {
         const body = this.physics.getPhysicsBody();
         // body.userData = { name: "player" };
 
-        body.angularFactor.set(0, 0, 0);   // блокуємо обертання від зіткнень
-        body.linearDamping = 0.9;          // затухання — персонаж не ковзає після зупинки
+        body.angularFactor.set(0, 0, 0);
+        body.linearDamping = 0.9;
         body.sleepSpeedLimit = 0;  
     }
 
@@ -108,15 +138,25 @@ export class Player {
         const sm = this._stateMachine;
 
         if (this.IsAttacking) {
-            if (sm.currentState !== this._attackState) {
-                sm.changeState(this._attackState);
+            // Verify target is still within attack range before maintaining / entering the state.
+            const targetPos = TriggerSystem.getNearestActivePosition("npc");
+            const inRange = !!targetPos && this.container.position.distanceTo(targetPos) <= AttackState.ATTACK_RADIUS;
+            if (!inRange) {
+                this.IsAttacking = false;
+                this.wearWeapon();
+            } else {
+                this.wearPistol();
+                if (sm.currentState !== this._attackState) {
+                    sm.changeState(this._attackState);
+                }
+                return;
             }
-            return;
         }
 
-        if (this.IsLooting) {
+        if (this.IsLooting && isStopped) {
             if (sm.currentState !== this._lootState) {
                 sm.changeState(this._lootState);
+                this.wearWeapon();
             }
             return;
         }
@@ -143,7 +183,7 @@ export class Player {
     }
 
     private static Update(delta: number) {
-        const dir = this.movement.Diraction;
+        const dir = this.movement.Direction;
 
         this.UpdateMovementState(dir);
         this._stateMachine.update(delta);
@@ -158,6 +198,26 @@ export class Player {
         const targetPos = (Vector3CToT(this.physics.getPhysicsBody().position));
 
         this.container.position.lerp(targetPos, delta * lerpSpeed)
+    }
+
+    /** Deals 1 point of damage to the nearest NPC whose trigger zone the player is inside. */
+    private static dealAttackDamage(): void
+    {
+        const trigger = TriggerSystem.getNearestActiveTrigger("npc");
+        const npc = trigger?.data as { takeDamage: (amount: number) => void } | null;
+        // npc?.takeDamage(1);
+    }
+
+    private static wearWeapon() {
+        this.character.setPartVisible("Weapon_Hand", true);
+        this.character.setPartVisible("Character_Pistol", false);
+        this.character.setPartVisible("Weapon_Back", false);
+    }
+
+    private static wearPistol() {
+        this.character.setPartVisible("Weapon_Hand", false);
+        this.character.setPartVisible("Character_Pistol", true);
+        this.character.setPartVisible("Weapon_Back", true);
     }
 }
 

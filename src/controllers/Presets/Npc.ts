@@ -30,12 +30,15 @@ import { Player } from "./Player";
      private physics!: PhysicsBody;
      private triggerZone!: TriggerZone;
 
+     private _hp: number = 5;
+     private _dead: boolean = false;
+
      get Position() {
          return this.container.position;      
      }  
 
      get diraction() {
-         return this.movement.Diraction;
+         return this.movement.Direction;
      }
 
      constructor() {
@@ -69,12 +72,13 @@ import { Player } from "./Player";
              this.container.position,
              6,
              "npc",
-             true,
+             false,
              this.container
          );
 
          this.triggerZone.onEnter = () => { Player.IsAttacking = true; };
          this.triggerZone.onExit  = () => { Player.IsAttacking = false; };
+         this.triggerZone.data = this;
          TriggerSystem.addTrigger(this.triggerZone);
      }
 
@@ -128,7 +132,7 @@ import { Player } from "./Player";
     
         private Update(delta: number) {
             this.input.update(delta);
-            const dir = this.movement.Diraction;
+            const dir = this.movement.Direction;
             const weight = this.movement.Weight;
 
             this.UpdateMovementState(dir, weight);
@@ -144,4 +148,20 @@ import { Player } from "./Player";
     
             this.container.position.lerp(targetPos, delta * lerpSpeed)
         }
+
+        // takeDamage(amount: number): void
+        // {
+        //     if (this._dead) return;
+        //     this._hp -= amount;
+        //     if (this._hp <= 0) this._die();
+        // }
+
+        // private _die(): void
+        // {
+        //     this._dead = true;
+        //     TriggerSystem.removeTrigger(this.triggerZone); // fires onExit → Player.IsAttacking = false
+        //     this.container.removeFromParent();
+        //     this.physics.destroy();
+        //     UpdateController.Instance.onUpdate.removeListeners(this.updateDelegate);
+        // }
 }

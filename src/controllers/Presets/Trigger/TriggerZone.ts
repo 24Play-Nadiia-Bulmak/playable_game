@@ -6,9 +6,13 @@ export class TriggerZone {
     radius: number;
     resourceType: string;
     isPlayerInside: boolean = false;
+    isActive: boolean = true;
 
     onEnter: (() => void) | null = null;
     onExit: (() => void) | null = null;
+
+    // Довільні дані прив'язані до цієї зони (наприклад, Prop)
+    data: any = null;
 
     private source: Object3D | null = null;
     private debugMesh: Mesh | null = null;
@@ -50,6 +54,7 @@ export class TriggerZone {
     }
 
     destroy() {
+        this.isActive = false;
         if (this.isPlayerInside) {
             this.isPlayerInside = false;
             this.onExit?.();
