@@ -23,4 +23,28 @@ export class CameraC extends CameraC_internal {
       }
     }
   }
+
+  static shake(duration: number = 0.5, magnitude: number = 0.1) {
+    if (!this.camera) return; 
+
+    const originalPosition = this.camera.position.clone();
+    const startTime = performance.now();    
+    const shake = () => {
+      const elapsed = (performance.now() - startTime) / 1000;
+      if (elapsed < duration) {
+        const offsetX = (Math.random() - 0.5) * 2 * magnitude;
+        const offsetY = (Math.random() - 0.5) * 2 * magnitude;
+        const offsetZ = (Math.random() - 0.5) * 2 * magnitude;
+        this.camera.position.set(
+          originalPosition.x + offsetX,
+          originalPosition.y + offsetY,
+          originalPosition.z + offsetZ
+        );
+        requestAnimationFrame(shake);
+      } else {
+        this.camera.position.copy(originalPosition);
+      } 
+    };
+    shake();
+  }
 }

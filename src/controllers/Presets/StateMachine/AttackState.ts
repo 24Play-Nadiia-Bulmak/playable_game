@@ -81,6 +81,9 @@ export class AttackState implements IState {
             this.character.AnimationSpeed = 1.5;
             this.character.onAnimFinish.addListener(this._onTakeOutFinishDelegate);
         }
+        this.character.setPartVisible("Weapon_Hand", false);
+        this.character.setPartVisible("Character_Pistol", true);
+        this.character.setPartVisible("Weapon_Back", true);
     }
 
     onUpdate(delta: number) {
@@ -141,6 +144,7 @@ export class AttackState implements IState {
         }
 
         this.playIfChanged(anim);
+        this.character.setPartVisible("Character_Pistol", true);
     }
 
     onExit() {
@@ -164,6 +168,9 @@ export class AttackState implements IState {
         this.rotation.lookAtTarget = null;
         this.rotation.enabled = true;
         this._lastAnim = null;
+                this.character.setPartVisible("Weapon_Hand", false);
+        this.character.setPartVisible("Character_Pistol", false);
+        this.character.setPartVisible("Weapon_Back", true);
     }
 
     /** Starts the stationary looping shoot mode. PistolShoot plays on a loop; onShoot fires on each cycle. */

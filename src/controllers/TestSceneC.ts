@@ -9,6 +9,7 @@ import { Npc } from "./Presets/Npc";
 import { TriggerSystem } from "./Presets/Trigger/TriggerSystem";
 import { TriggerZone } from "./Presets/Trigger/TriggerZone";
 import { Prop } from "./Presets/Prop/Prop";
+import { VfxSpawner } from "./Presets/Prop/VfxSpawner";
 import { SpawnManager, SpawnConfig } from "./Presets/ResourseSystem/SpawnManager";
 
 const WOOD_SPAWN_CONFIG: SpawnConfig = {
@@ -19,6 +20,8 @@ const WOOD_SPAWN_CONFIG: SpawnConfig = {
 
 export class TestSceneC {
   static init() {
+    ThreeC.initParticleRenderer();
+    VfxSpawner.init();
     TriggerSystem.init();
     SpawnManager.init();
     PhysicsC.initFixedStep();

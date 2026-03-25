@@ -59,7 +59,7 @@ export class Player {
         this.inited = true
         const asset = ResourcesC.getResource<GLTF>(ResourcesType.Mesh, MeshType.Character)
         this.character = new Character(asset);
-console.log(this.character)
+// console.log(this.character)
         this.character.playAnimation(BaseAnimation.Idle)
         this.container.add(this.character.tObj); // контейнер для візуального представлення гравця, який буде рухатися по фізиці, а не сама модель, щоб не було проблем з колізією та анімацією
         ThreeC.addToScene(this.container);
@@ -82,7 +82,7 @@ console.log(this.character)
 
         this.updateDelegate = new Delegate<number>((delta) => this.Update(delta)); // прив'язуємо оновлення гравця до загального оновлення гри
         UpdateController.Instance.onUpdate.addListener(this.updateDelegate); // додаємо наш метод оновлення до контролера оновлення, щоб він викликався кожного кадру
-
+        this.wearUnarmed();
         FollowCameraC.Init(this.container); // ініціалізуємо камеру, щоб вона слідувала за гравцем
     }
 
@@ -138,14 +138,11 @@ console.log(this.character)
         const sm = this._stateMachine;
 
         if (this.IsAttacking) {
-            // Verify target is still within attack range before maintaining / entering the state.
             const targetPos = TriggerSystem.getNearestActivePosition("npc");
             const inRange = !!targetPos && this.container.position.distanceTo(targetPos) <= AttackState.ATTACK_RADIUS;
             if (!inRange) {
                 this.IsAttacking = false;
-                this.wearWeapon();
             } else {
-                this.wearPistol();
                 if (sm.currentState !== this._attackState) {
                     sm.changeState(this._attackState);
                 }
@@ -153,10 +150,9 @@ console.log(this.character)
             }
         }
 
-        if (this.IsLooting && isStopped) {
+        if (this.IsLooting) {
             if (sm.currentState !== this._lootState) {
                 sm.changeState(this._lootState);
-                this.wearWeapon();
             }
             return;
         }
@@ -217,6 +213,12 @@ console.log(this.character)
     private static wearPistol() {
         this.character.setPartVisible("Weapon_Hand", false);
         this.character.setPartVisible("Character_Pistol", true);
+        this.character.setPartVisible("Weapon_Back", true);
+    }
+
+    private static wearUnarmed() {
+        this.character.setPartVisible("Weapon_Hand", false);
+        this.character.setPartVisible("Character_Pistol", false);
         this.character.setPartVisible("Weapon_Back", true);
     }
 }

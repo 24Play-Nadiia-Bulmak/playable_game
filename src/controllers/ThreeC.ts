@@ -1,9 +1,25 @@
 import { ColorFormat } from "@24tools/ads_common";
-import { ThreeC_internal, Template } from "@24tools/playable_template";
+import { ThreeC_internal, Template, UpdateController } from "@24tools/playable_template";
 import { AmbientLight, DirectionalLight } from "three";
 import { Color } from "three/src/math/Color";
+import { BatchedParticleRenderer } from "three.quarks";
 
 export class ThreeC extends ThreeC_internal {
+  static particleRenderer: InstanceType<typeof BatchedParticleRenderer>;
+
+  /// <summary>
+  /// Creates and registers the BatchedParticleRenderer used by all VFX in the scene.
+  /// Must be called once during scene initialization, before any VfxSpawner.init() calls.
+  /// </summary>
+  static initParticleRenderer(): void {
+    this.particleRenderer = new BatchedParticleRenderer();
+    this.addToScene(this.particleRenderer);
+
+    UpdateController.Instance.onUpdate.addDelegate((delta: number) => {
+      this.particleRenderer.update(delta);
+    });
+  }
+
   static createBaseLights() {
     this.defaultDirectionalLight = new DirectionalLight(0xffffff, 3.5);
     this.defaultAmbientLight = new AmbientLight(0xffffff, 1);

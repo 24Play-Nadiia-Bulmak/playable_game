@@ -21,7 +21,8 @@
     "cannon-es-debugger": "^1.0.0",
     "howler": "^2.2.4",
     "nipplejs": "^0.10.2",
-    "three": "^0.183.2"
+    "three": "^0.183.2",
+    "three.quarks": "^0.16.0"
   },
   "devDependencies": {
     "@types/howler": "^2.2.12",

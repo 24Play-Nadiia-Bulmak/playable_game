@@ -10,6 +10,9 @@ export class RunState implements IState {
 
     onEnter() {
         this.character.playAnimation(BaseAnimation.Run);
+        this.character.setPartVisible("Weapon_Hand", false);
+        this.character.setPartVisible("Character_Pistol", false);
+        this.character.setPartVisible("Weapon_Back", true);
     }
 
     onUpdate(_delta: number) {

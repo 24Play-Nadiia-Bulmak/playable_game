@@ -6,6 +6,7 @@ import { TriggerSystem } from "../Trigger/TriggerSystem";
 import { TriggerZone } from "../Trigger/TriggerZone";
 import { DamageProgressBar } from "./DamageProgressBar";
 import { WoodParticleSpawner } from "./WoodParticleSpawner";
+import { VfxSpawner } from "./VfxSpawner";
 
 export class Prop {
     private _hp: number;
@@ -13,16 +14,11 @@ export class Prop {
     private _broken: boolean = false;
     private readonly _bar: DamageProgressBar;
 
-    /** Total mesh layers — drives progress bar granularity. */
     private readonly _totalSteps: number;
-    /** HP threshold at which the next layer is stripped. */
     private readonly _hpPerStep: number;
-    /** How many layers have already been removed. */
     private _currentStep: number = 0;
-    /** Index of the mesh the bar is currently parented to. */
     private _barHostIndex: number = 0;
 
-    /** Called once when this prop's HP reaches zero. Assign from outside to hook respawn logic. */
     onBroken: (() => void) | null = null;
 
     constructor(
@@ -76,6 +72,92 @@ export class Prop {
         }
     }
 
+    private _playDisappearAnimation(obj: Object3D, duration: number = 600): void {
+        const startScale = obj.scale.x;
+        const startY = obj.position.y;
+        const rotationVar = [obj.rotation.x, obj.rotation.y, obj.rotation.z];
+        const randomRotation = rotationVar[Math.floor(Math.random() * rotationVar.length)] + Math.PI / 4;
+        
+        const data = { 
+            scale: startScale, 
+            y: startY, 
+            rotation: randomRotation,
+            position: obj.position.clone()
+        };
+
+        const tween = new Tween(data)
+            .to({ 
+                scale: 0, 
+                y: startY + 2, // Підстрибує трохи вище
+                rotation: randomRotation + Math.PI // Обертання навколо своєї осі
+
+            }, duration)
+            // Back.In створює ефект "відтяжки" перед фінальним рухом
+            .easing(Easing.Back.In)
+            .onUpdate(({ scale, y, rotation }) => {
+                obj.scale.setScalar(scale);
+                obj.position.y = y + 0.5 * Math.sin((1 - scale) * Math.PI); // Додаємо синусоїдальний стрибок
+                obj.rotation.x = rotation;
+                
+                // Якщо у матеріалу є opacity, можна додати прозорість
+                if ((obj as any).material && (obj as any).material.transparent) {
+                    (obj as any).material.opacity = scale / startScale;
+                }
+            })
+            .onComplete(() => {
+                obj.visible = false;
+                obj.removeFromParent();
+            });
+
+        tween.start();
+        TweenC.add(tween);
+    }
+
+//     private _playDisappearAnimation(obj: Object3D, duration: number = 600): void {
+//     const startScale = obj.scale.x;
+//     const startPos = obj.position.clone();
+//     const startRot = obj.rotation.clone();
+
+//     // Генеруємо випадковий вектор напрямку обертання (від -PI до PI)
+//     // Це зробить кожне зникнення унікальним
+//     const randomSpinX = (Math.random() - 0.5) * Math.PI * 2;
+//     const randomSpinY = (Math.random() - 0.5) * Math.PI * 2;
+//     const randomSpinZ = (Math.random() - 0.5) * Math.PI * 2;
+
+//     const data = { 
+//         progress: 0 // Використовуємо прогрес від 0 до 1 для зручності
+//     };
+
+//     const tween = new Tween(data)
+//         .to({ progress: 1 }, duration)
+//         .easing(Easing.Back.In)
+//         .onUpdate(({ progress }) => {
+//             const currentScale = startScale * (1 - progress);
+//             obj.scale.setScalar(currentScale);
+
+//             // Анімація позиції: основний підйом + синусоїдальний стрибок
+//             const jumpHeight = 0.5 * Math.sin(progress * Math.PI);
+//             obj.position.y = startPos.y + (progress * 2) + jumpHeight;
+
+//             // Рандомний ротейшн: додаємо до початкового кута частину рандомного обертання
+//             obj.rotation.x = startRot.x + randomSpinX * progress;
+//             obj.rotation.y = startRot.y + randomSpinY * progress;
+//             obj.rotation.z = startRot.z + randomSpinZ * progress;
+
+//             // Прозорість
+//             const material = (obj as any).material;
+//             if (material && material.transparent) {
+//                 material.opacity = 1 - progress;
+//             }
+//         })
+//         .onComplete(() => {
+//             obj.visible = false;
+//             obj.removeFromParent();
+//         });
+
+//     tween.start();
+//     TweenC.add(tween);
+// }
     /** Removes a single mesh layer and its corresponding shadow (if any). */
     private _removeLayer(index: number) {
         const mesh = this._meshes[index];
@@ -95,8 +177,10 @@ export class Prop {
         WoodParticleSpawner.spawn(spawnPos);
 
         this._physicsBodies[index]?.destroy();
-        mesh.removeFromParent();
-        this._shadowMeshes[index]?.removeFromParent();
+        // Animate scale → 0 before removing from scene instead of instant removal.
+        this._playDisappearAnimation(mesh);
+        const shadow = this._shadowMeshes[index];
+        if (shadow) this._playDisappearAnimation(shadow);
     }
 
     private break() {
@@ -109,15 +193,12 @@ export class Prop {
             this._shadowMeshes[i]?.removeFromParent();
         }
 
+        VfxSpawner.spawnDestroy(this._trigger.position.clone());
+
         TriggerSystem.removeTrigger(this._trigger);
         this.onBroken?.();
     }
 
-    /**
-     * Plays a hit-reaction on the box container: a squish-stretch punch (compress Y,
-     * expand XZ) followed by an elastic spring back, combined with a Y-axis pop-and-bounce.
-     * Targets the parent container so all mesh components react together.
-     */
     shake(): void {
         const mesh = this._meshes[this._barHostIndex] ?? this._meshes[0];
         const target = mesh?.parent ?? mesh;
@@ -134,7 +215,7 @@ export class Prop {
         // Squish phase — compress Y / expand XZ in 60 ms for immediate tactile feedback.
         const squish = new Tween(scaleData)
             .to({ sx: ox * 1.18, sy: oy * 0.82, sz: oz * 1.18 }, 60)
-            .easing(Easing.Quadratic.Out)
+            .easing(Easing.Quadratic.In)
             .onUpdate(({ sx, sy, sz }) => {
                 target.scale.set(sx, sy, sz);
             });
@@ -158,7 +239,6 @@ export class Prop {
                 target.position.y = py;
             });
 
-        // Bounce down phase — lands with Bounce.Out easing back to the original Y.
         const bounceDown = new Tween(posData)
             .to({ py: oPy }, 380)
             .easing(Easing.Bounce.Out)
@@ -178,5 +258,8 @@ export class Prop {
         TweenC.add(springBack);
         TweenC.add(popUp);
         TweenC.add(bounceDown);
+
+        const hitPos = mesh.getWorldPosition(new Vector3());
+        VfxSpawner.spawnHit(hitPos);
     }
 }
