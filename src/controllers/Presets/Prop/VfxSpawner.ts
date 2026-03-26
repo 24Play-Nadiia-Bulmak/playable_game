@@ -1,57 +1,86 @@
-import { Object3D, Vector3 } from "three";
-import { QuarksLoader, QuarksUtil } from "three.quarks";
-import { ThreeC } from "../../ThreeC";
+import { FXC, ResourcesC } from "@24tools/playable_template";
+import { Texture, Vector3 } from "three";
 
-import vfxHitJson from "../../../resources/vfx/VFX_Lootable_Hit.json";
-import vfxDestroyJson from "../../../resources/vfx/VFX_Lootable_Destroy.json";
+type FxResource = { texture: Texture; info: object };
 
 export class VfxSpawner {
-    private static _hitVfx: Object3D | null = null;
-    private static _destroyVfx: Object3D | null = null;
-
-    /// <summary>
-    /// Parses both VFX JSONs, registers all particle emitters with the
-    /// BatchedParticleRenderer and adds the root objects to the scene.
-    /// Must be called once after ThreeC.initParticleRenderer().
-    /// </summary>
-    static init(): void {
-        const loader = new QuarksLoader();
-
-        const hitVfx = loader.parse(vfxHitJson as any) as Object3D;
-        QuarksUtil.addToBatchRenderer(hitVfx, ThreeC.particleRenderer);
-        ThreeC.addToScene(hitVfx);
-        this._hitVfx = hitVfx;
-
-        const destroyVfx = loader.parse(vfxDestroyJson as any) as Object3D;
-        QuarksUtil.addToBatchRenderer(destroyVfx, ThreeC.particleRenderer);
-        ThreeC.addToScene(destroyVfx);
-        this._destroyVfx = destroyVfx;
-    }
-
-    /**
-     * Moves the hit VFX to `worldPos` and replays it from the beginning.
-     * Safe to call before init() — will silently no-op.
-     *
-     * @param worldPos World-space position where the impact effect should appear.
-     */
+    /** Hit flash on a lootable prop (used on each shake cycle). */
     static spawnHit(worldPos: Vector3): void {
-        if (!this._hitVfx) return;
+        const res = ResourcesC.getResource<FxResource>("fx", "Hit");
+        if (!res?.texture) return;
 
-        this._hitVfx.position.copy(worldPos);
-        QuarksUtil.restart(this._hitVfx);
+        FXC.SpawnFX(worldPos, res.texture, {
+            frames_count_x: 3,
+            frames_count_y: 3,
+            frames_count_total: 9,
+            scale: { x: 2.5, y: 2.5 },
+            interval: 30,
+            alpha: 1,
+            repeat: { x: 1 / 3, y: 1 / 3 },
+        });
     }
 
-    /**
-     * Moves the destroy VFX to `worldPos` and replays it from the beginning.
-     * Intended to be called when a prop is fully destroyed.
-     * Safe to call before init() — will silently no-op.
-     *
-     * @param worldPos World-space position where the destroy effect should appear.
-     */
-    static spawnDestroy(worldPos: Vector3): void {
-        if (!this._destroyVfx) return;
+    /** Destruction burst when a prop is fully broken. */
+    static spawnBreak(worldPos: Vector3): void {
+        const res = ResourcesC.getResource<FxResource>("fx", "Break");
+        if (!res?.texture) return;
 
-        this._destroyVfx.position.copy(worldPos);
-        QuarksUtil.restart(this._destroyVfx);
+        FXC.SpawnFX(worldPos, res.texture, {
+            frames_count_x: 4,
+            frames_count_y: 4,
+            frames_count_total: 16,
+            scale: { x: 3.5, y: 3.5 },
+            interval: 40,
+            alpha: 1,
+            repeat: { x: 1 / 4, y: 1 / 4 },
+        });
+    }
+
+    /** Sparkle that plays when the player collects a resource. */
+    static spawnResCollected(worldPos: Vector3): void {
+        const res = ResourcesC.getResource<FxResource>("fx", "ResCollected");
+        if (!res?.texture) return;
+
+        FXC.SpawnFX(worldPos, res.texture, {
+            frames_count_x: 7,
+            frames_count_y: 2,
+            frames_count_total: 14,
+            scale: { x: 2.5, y: 2.5 },
+            interval: 30,
+            alpha: 1,
+            repeat: { x: 1 / 7, y: 1 / 2 },
+        });
+    }
+
+    /** Impact flash displayed at the target position each time the player fires. */
+    static spawnShootEffect(worldPos: Vector3): void {
+        const res = ResourcesC.getResource<FxResource>("fx", "Hit");
+        if (!res?.texture) return;
+
+        FXC.SpawnFX(worldPos, res.texture, {
+            frames_count_x: 3,
+            frames_count_y: 3,
+            frames_count_total: 9,
+            scale: { x: 2.2, y: 2.2 },
+            interval: 25,
+            alpha: 0.9,
+            repeat: { x: 1 / 3, y: 1 / 3 },
+        });
+    }
+
+    /** Dust poof used when a prop respawns. */
+    static spawnSpawn(worldPos: Vector3): void {
+        const res = ResourcesC.getResource<FxResource>("fx", "Step");
+        if (!res?.texture) return;
+
+        FXC.SpawnFX(worldPos, res.texture, {
+            frames_count_x: 3,
+            frames_count_y: 3,
+            frames_count_total: 9,
+            scale: { x: 3.2, y: 3.2 },
+            interval: 35,
+            alpha: 0.8,
+            repeat: { x: 1 / 3, y: 1 / 3 },
+        });
     }
 }

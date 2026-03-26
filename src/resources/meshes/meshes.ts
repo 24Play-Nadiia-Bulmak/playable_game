@@ -18,8 +18,20 @@ export const meshes : ConvertResourceType = {
       value: ConvertToBase64WhenRelease('./models/scene.glb'),
     },
     {
+      name: "progress_bar",
+      value: ConvertToBase64WhenRelease('./models/progress_bar_new.glb'),
+    },
+        {
+      name: "zone",
+      value: ConvertToBase64WhenRelease('./models/zone.glb'),
+    },
+        {
       name: "wood_particle",
       value: ConvertToBase64WhenRelease('./models/particle_1.glb'),
+    },
+    {
+      name: "coin",
+      value: ConvertToBase64WhenRelease('./models/coin_handmade.glb'),
     },
   ],
   loader: Template3d.meshLoader

@@ -9,8 +9,9 @@ import { Npc } from "./Presets/Npc";
 import { TriggerSystem } from "./Presets/Trigger/TriggerSystem";
 import { TriggerZone } from "./Presets/Trigger/TriggerZone";
 import { Prop } from "./Presets/Prop/Prop";
-import { VfxSpawner } from "./Presets/Prop/VfxSpawner";
 import { SpawnManager, SpawnConfig } from "./Presets/ResourseSystem/SpawnManager";
+import { PayZone } from "./Presets/PayZone/PayZone";
+import { VfxSpawner } from "./Presets/Prop/VfxSpawner";
 
 const WOOD_SPAWN_CONFIG: SpawnConfig = {
     resourceType: "wood",
@@ -21,12 +22,12 @@ const WOOD_SPAWN_CONFIG: SpawnConfig = {
 export class TestSceneC {
   static init() {
     ThreeC.initParticleRenderer();
-    VfxSpawner.init();
     TriggerSystem.init();
     SpawnManager.init();
     PhysicsC.initFixedStep();
     this.createMap();
     this.InitPlayer();
+    this.createPayZone();
     this.initNpc(3);
 
     InputC.onTouchDown.addDelegate((event) => {
@@ -63,17 +64,22 @@ export class TestSceneC {
     const mapMesh = ThreeC.getObject("map");
     ThreeC.addToScene(mapMesh);
 
-    // Group all sub-meshes of the same wooden box by their parent container
-    const boxGroups = new Map<Object3D, { meshes: any[]; shadows: any[] }>();
+    // Group all sub-meshes of the same wooden box by their shared grandparent container.
+    // Each mesh typically lives inside its own wrapper Object3D (BoxPart0/1/2), so
+    // child.parent differs per mesh. Grouping by child.parent.parent (the common box root)
+    // ensures all damage-state meshes of one box become a single Prop with N steps.
+    const boxGroups = new Map<Object3D, { meshes: any[]; shadows: any[]; meshParents: Object3D[] }>();
 
     mapMesh.traverse((child: any) => {
       if (child.isMesh && child.name.includes("Wooden_Box_mesh_")) {
-        const parent: Object3D = child.parent ?? mapMesh;
-        if (!boxGroups.has(parent)) {
-          boxGroups.set(parent, { meshes: [], shadows: [] });
+        // Use grandparent as the shared group key so all parts of one box are merged.
+        const container: Object3D = child.parent?.parent ?? child.parent ?? mapMesh;
+        if (!boxGroups.has(container)) {
+          boxGroups.set(container, { meshes: [], shadows: [], meshParents: [] });
         }
-        const group = boxGroups.get(parent)!;
+        const group = boxGroups.get(container)!;
         group.meshes.push(child);
+        group.meshParents.push(child.parent ?? container);
         const shadowMesh = child.parent?.getObjectByName(
           child.name.replace("_mesh_", "_shadow_")
         ) ?? null;
@@ -81,8 +87,8 @@ export class TestSceneC {
       }
     });
 
-    for (const [parent, { meshes, shadows }] of boxGroups) {
-      this.createWoodProp(meshes, shadows, parent);
+    for (const [_, { meshes, shadows, meshParents }] of boxGroups) {
+      this.createWoodProp(meshes, shadows, meshParents);
       SpawnManager.trackSpawn("wood");
     }
   }
@@ -91,11 +97,12 @@ export class TestSceneC {
    * Creates a destructible wood Prop from the provided meshes, registers its trigger and
    * physics bodies, and schedules a respawn via SpawnManager when the prop is broken.
    *
-   * @param meshes    Three.js mesh objects that form the visible prop.
-   * @param shadows   Corresponding shadow meshes (if any).
-   * @param parent    The scene parent to re-attach meshes to upon respawn.
+   * @param meshes       Three.js mesh objects that form the visible prop (one per damage step).
+   * @param shadows      Corresponding shadow meshes (if any), parallel array to meshes.
+   * @param meshParents  Original scene parents for each mesh (BoxPart0/1/2). Used to restore
+   *                     meshes to their correct place in the hierarchy on respawn.
    */
-  private static createWoodProp(meshes: Object3D[], shadows: Object3D[], parent: Object3D): void {
+  private static createWoodProp(meshes: Object3D[], shadows: Object3D[], meshParents: Object3D[]): void {
     const physicsBodies = meshes.map((mesh: any) => {
       const body = new PhysicsBody(
         mesh,
@@ -110,7 +117,7 @@ export class TestSceneC {
     });
 
     const centerPos = meshes[0].getWorldPosition(new Vector3());
-    const woodTrigger = new TriggerZone(centerPos, 1.5, "wood", false);
+    const woodTrigger = new TriggerZone(centerPos, 1.3, "wood", false);
     TriggerSystem.addTrigger(woodTrigger);
 
     const prop = new Prop(meshes, physicsBodies, woodTrigger, shadows);
@@ -118,7 +125,7 @@ export class TestSceneC {
 
     woodTrigger.onEnter = () => {
       Player.IsLooting = true;
-      // prop.showBar();
+      prop.showBar();
     };
     woodTrigger.onExit = () => {
       if (!TriggerSystem.hasAnyActiveLootTrigger(["wood", "stone", "herb"])) {
@@ -130,16 +137,36 @@ export class TestSceneC {
     prop.onBroken = () => {
       SpawnManager.trackDespawn("wood");
       SpawnManager.scheduleRespawn(WOOD_SPAWN_CONFIG, () => {
-        // Re-attach meshes to their original scene parent before re-creating the prop
-        meshes.forEach(m => parent.add(m));
-        shadows.forEach(s => parent.add(s));
-        TestSceneC.createWoodProp(meshes, shadows, parent);
+        // Restore each mesh and its shadow to their original wrapper Object3D.
+        meshes.forEach((m, i) => meshParents[i].add(m));
+        shadows.forEach((s, i) => meshParents[i].add(s));
+        VfxSpawner.spawnSpawn(centerPos);
+        TestSceneC.createWoodProp(meshes, shadows, meshParents);
       });
     };
   }
 
   private static InitPlayer() {
     Player.Init();
+  }
+
+  /**
+   * Creates the pay-zone that the player must enter to spend collected resources.
+   * Triggers the three-stage coin animation sequence once resources are delivered:
+   * coins fly to the zone (task 64), then to the HUD (task 63), then the zone
+   * shrinks and disappears (task 65).
+   *
+   * TODO: Adjust the spawn position to fit your map layout.
+   */
+  private static createPayZone(): void {
+    
+    const zone = new PayZone(new Vector3(Math.random() * 2 + 1, 0, Math.floor(Math.random() * 6 + 2)), 0.75);
+    zone.onPaid = () =>
+    {
+        // Spawn a new pay zone at a fresh random position for the next level
+        this.createPayZone();
+        console.log('new zone created');
+     };
   }
 
   private static initNpc(count: number = 1) {

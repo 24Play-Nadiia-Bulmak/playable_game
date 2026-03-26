@@ -46,8 +46,24 @@ export class Player {
     private static _lootState: LootState;
     private static _attackState: AttackState;
 
+    private static _isShootingFreeze: boolean = false;
+
+    private static _detectionRing: THREE.Mesh;
+    private static _detectionRingTime: number = 0;
+
     static get diraction() {
         return this.input.CurrentDirection;
+    }
+
+    static get forward(): THREE.Vector3 {
+        const dir = new THREE.Vector3();
+        this.container.getWorldDirection(dir);
+        dir.y = 0;
+        return dir.normalize();
+    }
+
+    static get IsIdle(): boolean {
+        return !!this._stateMachine && this._stateMachine.currentState === this._idleState;
     }
 
     static get Position() {
@@ -79,11 +95,28 @@ export class Player {
 
         this.InitStateMachine();
         this.initInventory();
+        this.InitDetectionRing();
 
         this.updateDelegate = new Delegate<number>((delta) => this.Update(delta)); // прив'язуємо оновлення гравця до загального оновлення гри
         UpdateController.Instance.onUpdate.addListener(this.updateDelegate); // додаємо наш метод оновлення до контролера оновлення, щоб він викликався кожного кадру
         this.wearUnarmed();
         FollowCameraC.Init(this.container); // ініціалізуємо камеру, щоб вона слідувала за гравцем
+    }
+
+    private static InitDetectionRing() {
+        const geo = new THREE.RingGeometry(6.0, 6.1, 48, 1, 0, Math.PI * 2);
+        const mat = new THREE.MeshBasicMaterial({
+            color: 'green',
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.5,
+
+        });
+        this._detectionRing = new THREE.Mesh(geo, mat);
+        this._detectionRing.rotation.x = -Math.PI / 2;
+        this._detectionRing.position.y = 0.05;
+        this._detectionRing.visible = false;
+        this.container.add(this._detectionRing);
     }
 
     private static InitStateMachine() {
@@ -96,6 +129,7 @@ export class Player {
             this.container,
             () => this.movement.Direction,
             () => Player.dealAttackDamage(),
+            (freeze) => { Player._isShootingFreeze = freeze; },
         );
 
         this._stateMachine = new StateMachine();
@@ -150,7 +184,11 @@ export class Player {
             }
         }
 
-        if (this.IsLooting) {
+        // Lock movement as soon as the player enters a loot zone so the character
+        // decelerates naturally, then transition to LootState once fully stopped.
+        this.movement.isLocked = this.IsLooting;
+
+        if (this.IsLooting && isStopped) {
             if (sm.currentState !== this._lootState) {
                 sm.changeState(this._lootState);
             }
@@ -178,14 +216,28 @@ export class Player {
         });
     }
 
+    private static UpdateDetectionRing(delta: number) {
+        const npcInRange = TriggerSystem.hasAnyActiveTrigger("npc");
+        this._detectionRing.visible = npcInRange;
+        if (npcInRange) {
+            this._detectionRingTime += delta;
+            const pulse = 1 + 0.1 * Math.sin(this._detectionRingTime * 6);
+            this._detectionRing.scale.set(pulse, pulse, pulse);
+        }
+    }
+
     private static Update(delta: number) {
         const dir = this.movement.Direction;
 
         this.UpdateMovementState(dir);
         this._stateMachine.update(delta);
+        this.UpdateDetectionRing(delta);
 
-        const cPos = Vector3TToC(dir);
-        this.physics.getPhysicsBody().velocity.copy(cPos);
+        // While a one-shot PistolShoot is playing, zero out the physics velocity so
+        // the character doesn't slide. MoveC keeps tracking the joystick the whole
+        // time, so movement resumes instantly and at full speed the moment the shot ends.
+        const velDir = this._isShootingFreeze ? new THREE.Vector3() : dir;
+        this.physics.getPhysicsBody().velocity.copy(Vector3TToC(velDir));
         this.MoveVisual(delta);
     }
 

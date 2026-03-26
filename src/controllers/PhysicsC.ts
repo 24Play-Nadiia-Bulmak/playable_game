@@ -120,6 +120,20 @@ export class PhysicsBody {
     return this.body;
   }
 
+  /** Removes the body from the physics world but keeps the body reference alive so it can be re-added later via addToWorld(). */
+  removeFromWorld(): void
+  {
+    if (!Physics_internal.physicsWorld || !this.body) return;
+    Physics_internal.physicsWorld.removeBody(this.body);
+  }
+
+  /** Re-adds a previously removed body back into the physics world. */
+  addToWorld(): void
+  {
+    if (!Physics_internal.physicsWorld || !this.body) return;
+    Physics_internal.physicsWorld.addBody(this.body);
+  }
+
   destroy() { // видаляє тіло з фізики і зупиняє синхронізацію, якщо вона була створена
     if (!Physics_internal.physicsWorld) return;
 

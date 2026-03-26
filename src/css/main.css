@@ -99,7 +99,7 @@ canvas {
   pointer-events: none;
 }
 
-#ui,
+/* #ui, */
 #editor {
   position: absolute;
   top: 50%;

@@ -20,12 +20,12 @@ window.setupConfig = async function (config) {
     },
     ticker: Template3d.ticker,
     debug: {
-      debug: true, // set true if you want to enable debug mode
+      debug: false, // set true if you want to enable debug mode
       physics: true,
       // set true if you want to enable physics debugger
       logger: true, // set true if you want to enable logger
       //  fps_limitter: 30, // set fps limitter (number) or false to disable it
-      fps_counter: true // set true if you want to enable fps counter
+      fps_counter: false // set true if you want to enable fps counter
     }}).init({
     config: config || formConfigForPlayable(formConfigUI({
       type_default: Template.templateType,

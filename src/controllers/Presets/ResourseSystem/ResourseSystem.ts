@@ -23,6 +23,22 @@ export class ResourseSystem {
         this.onChange.Invoke(this.inventory);
     }
 
+    /** Sets all resource counts to zero and fires the onChange event. */
+    clearInventory(): void {
+        for (const key of Object.keys(this.inventory)) {
+            this.inventory[key] = 0;
+        }
+        this.onChange.Invoke(this.inventory);
+    }
+
+    minusResource(type: string, amount: number = 1) {
+        if (!this.inventory[type]) {
+            this.inventory[type] = 0;
+        }
+        this.inventory[type] = Math.max(0, this.inventory[type] - amount);
+        this.onChange.Invoke(this.inventory);
+    }
+
     get Inventory(): Readonly<Inventory> {
         return this.inventory;
     }

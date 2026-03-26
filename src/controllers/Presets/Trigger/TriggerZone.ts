@@ -10,6 +10,7 @@ export class TriggerZone {
 
     onEnter: (() => void) | null = null;
     onExit: (() => void) | null = null;
+    onStay: (() => void) | null = null;
 
     // Довільні дані прив'язані до цієї зони (наприклад, Prop)
     data: any = null;
@@ -50,6 +51,8 @@ export class TriggerZone {
         } else if (!inside && this.isPlayerInside) {
             this.isPlayerInside = false;
             this.onExit?.();
+        } else if (inside && this.isPlayerInside) {
+            this.onStay?.();
         }
     }
 
