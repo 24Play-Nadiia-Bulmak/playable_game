@@ -68,7 +68,6 @@ export class PlayerInput implements IMoveInput {
     }
 
     onTouchDown(event) {
-        // console.log(event);
 
         if (this.inputaActive) return;
         this.inputaActive = true;

@@ -7,8 +7,10 @@
    }
 #hud {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    /* top: 20px;
+    right: 20px; */
+    top: 0.25rem;
+    right: 0;
     display: flex;
     flex-direction: column;
     align-items: flex-end;
@@ -18,11 +20,18 @@
     font-size: 16px;
 }
 
+.hud-item--wood { 
+    background-image: url('../resources/images/ResourceBackground_Wood.webp'); 
+}
+.hud-item--herb { 
+    background-image: url('../resources/images/ResourceBackground_Metal.webp'); 
+}
+
 .hud-item {
     display: flex;
     align-items: center;
-    width: 8em;
-    height: 3em;
+    width: 6em;
+    height: 2em;
     padding-right: 12px;
     padding-left: 12px;
     background-repeat: no-repeat;
@@ -54,12 +63,14 @@
     animation: hud-bump 0.35s ease-out forwards;
 }
 
-/* ── Fly-to-HUD particle ── */
 @keyframes hud-fly {
     0%   { transform: translate(0, 0)                    scale(1);   opacity: 1; }
     80%  { transform: translate(var(--dx), var(--dy))    scale(0.5); opacity: 0.9; }
     100% { transform: translate(var(--dx), var(--dy))    scale(0);   opacity: 0; }
 }
+
+.hud-fly-particle--wood { background-image: url('../resources/images/ResourceBackground_Wood.webp'); }
+.hud-fly-particle--herb { background-image: url('../resources/images/ResourceBackground_Metal.webp'); }
 
 .hud-fly-particle {
     position: fixed;
@@ -84,8 +95,7 @@
     position: absolute;
     top: 20px;
     left: 20px;
-    /* left: 50%; */
-    /* transform: translateX(-50%); */
+
     width: 200px;
     display: flex;
     flex-direction: column;

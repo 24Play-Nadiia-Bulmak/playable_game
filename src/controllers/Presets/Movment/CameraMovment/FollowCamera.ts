@@ -3,7 +3,6 @@ import { Object3D, Vector3 } from "three";
 import { ThreeC } from "../../../ThreeC";
 import { CameraC } from "../../../CameraC";
 import { Player } from "../../Player";
-import { PlayerInput } from "../../Input/PlayerInput";
 
 export class FollowCameraC {
     private static updateDelegate: Delegate<number>;
@@ -41,8 +40,6 @@ export class FollowCameraC {
     private static Update(delta: number) {
         if (!this.target.position) return;
 
-        // Use the character's actual facing direction so the camera follows any rotation
-        // (movement input, looting look-at, attack look-at, etc.)
         const facingDir = Player.forward;
         if (!this.oldDir) {
             this.oldDir = facingDir.clone();
@@ -56,7 +53,6 @@ export class FollowCameraC {
         this.mainContainer.position.z += this.Offset.z;
         const targetPos = this.mainContainer.position.clone();
 
-        // Shift the look-ahead point in the character's current facing direction
         targetPos.add(this.oldDir.clone().multiplyScalar(2));
 
         const lerpSpeed = 3;

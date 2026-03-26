@@ -9,6 +9,8 @@ import { IState } from "./StateMachine";
 import { Player } from "../Player";
 import { HudC } from "../UI/HudC";
 import { VfxSpawner } from "../Prop/VfxSpawner";
+import { vfx } from "../../../resources/vfx/vfx";
+import { Vector3 } from "quarks.core";
 
 export class LootState implements IState {
     private _onLoopDelegate: Delegate<{}>;
@@ -42,7 +44,10 @@ export class LootState implements IState {
         const collectPos = this._lockedTrigger?.position.clone();
         Player.inventory.addResource(resourceType, 1);
         if (collectPos) HudC.flyToHud(resourceType, collectPos);
-        if (collectPos) VfxSpawner.spawnResCollected(collectPos);
+        const vfxPos = collectPos ? collectPos.clone() : this.character.tObj.position.clone();
+            vfxPos.y += 1.0;
+            vfxPos.z += 0.5;
+        if (collectPos) VfxSpawner.spawnResCollected(vfxPos);
     }
 
     onEnter() {
@@ -58,7 +63,6 @@ export class LootState implements IState {
     
     onUpdate(delta: number) {
         if (this._lockedTrigger && !this._lockedTrigger.isPlayerInside) {
-            // Apply the pending hit if a cycle was already in progress when the player left.
             if (this._cycleTimer > 0) this._applyDamage();
             this._lockedTrigger = null;
             this._cycleTimer = 0;
@@ -84,6 +88,7 @@ export class LootState implements IState {
             if (!this._shakeTriggered && this._cycleTimer >= this._lootDuration / 3) {
                 this._shakeTriggered = true;
                 (this._lockedTrigger.data as Prop | null)?.shake();
+                VfxSpawner.spawnHit(this._lockedTrigger.position.clone().add(new Vector3(0, 1, 0)));
             }
         }
 
@@ -93,7 +98,6 @@ export class LootState implements IState {
     onExit() {
         this.character.onAnimLoop.removeListeners(this._onLoopDelegate);
         this.rotation.lookAtTarget = null;
-        // Apply the pending hit if a cycle was in progress when the state was exited.
         if (this._cycleTimer > 0) this._applyDamage();
         (this._lockedTrigger?.data as Prop | null)?.hideBar();
         this._lockedTrigger = null;

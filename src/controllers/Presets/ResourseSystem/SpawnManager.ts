@@ -1,11 +1,8 @@
 import { UpdateController } from "@24tools/playable_template";
 
 export interface SpawnConfig {
-    /** Resource type identifier (e.g. "wood", "stone", "herb"). */
     resourceType: string;
-    /** Seconds before a destroyed prop reappears. */
     respawnDelay: number;
-    /** Maximum number of simultaneously active props of this type. */
     maxCount: number;
 }
 
@@ -15,11 +12,6 @@ interface PendingRespawn {
     spawnFn: () => void;
 }
 
-/**
- * Manages resource-prop respawning: tracks active counts per type,
- * queues pending respawns with a configurable delay, and enforces a maximum
- * simultaneous spawn limit per resource type.
- */
 export class SpawnManager
 {
     private static _inited: boolean = false;
@@ -33,13 +25,11 @@ export class SpawnManager
         UpdateController.Instance.onUpdate.addDelegate((delta) => this._update(delta));
     }
 
-    /** Increment the active counter for a resource type when a prop spawns. */
     static trackSpawn(type: string): void
     {
         this._activeCountByType.set(type, (this._activeCountByType.get(type) ?? 0) + 1);
     }
 
-    /** Decrement the active counter for a resource type when a prop is destroyed. */
     static trackDespawn(type: string): void
     {
         const count = this._activeCountByType.get(type) ?? 0;
@@ -51,10 +41,6 @@ export class SpawnManager
         return this._activeCountByType.get(type) ?? 0;
     }
 
-    /**
-     * Queues a respawn after the delay defined in `config`.
-     * The spawn function is called only if the active count is below `config.maxCount`.
-     */
     static scheduleRespawn(config: SpawnConfig, spawnFn: () => void): void
     {
         this._pendingRespawns.push({ config, timeLeft: config.respawnDelay, spawnFn });

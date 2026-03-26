@@ -6,81 +6,6 @@ import { ThreeC } from "../../ThreeC";
 import { ResourcesType } from "../Enums/ResourcesType";
 import { MeshType } from "../Enums/MeshType";
 
-// export class WoodParticleSpawner {
-//     private static readonly PARTICLE_COUNT = 3; 
-//     private static readonly SPREAD_RADIUS = 0.5;
-
-//     static spawn(worldPosition: Vector3): void {
-//         const gltf = ResourcesC.getResource<GLTF>(ResourcesType.Mesh, MeshType.WoodParticle);
-//         if (!gltf) return;
-
-//         for (let i = 0; i < this.PARTICLE_COUNT; i++) {
-//             const instance = gltf.scene.clone(true);
-
-//             const offsetX = (Math.random() - 0.5) * this.SPREAD_RADIUS;
-//             const offsetZ = (Math.random() - 0.5) * this.SPREAD_RADIUS;
-            
-//             instance.scale.set(0, 0, 0);
-//             instance.position.set(
-//                 worldPosition.x + offsetX,
-//                 worldPosition.y, 
-//                 worldPosition.z + offsetZ
-//             );
-
-//             instance.rotation.set(
-//                 Math.random() * Math.PI,
-//                 Math.random() * Math.PI,
-//                 Math.random() * Math.PI
-//             );
-
-//             ThreeC.addToScene(instance);
-
-//             const animData = { 
-//                 s: 0, 
-//                 y: worldPosition.y, 
-//                 ry: instance.rotation.y,
-//                 rx: instance.rotation.x
-//             };
-
-//             // 1. ФАЗА: Стрибок вгору та масштабування (Pop up)
-//             const jumpUp = new Tween(animData)
-//                 .to({ 
-//                     s: 0.4 + Math.random() * 0.3,
-//                     y: worldPosition.y + 0.8 + Math.random() * 0.5,
-//                     ry: animData.ry + Math.PI
-//                 }, 400 + Math.random() * 200)
-//                 .easing(Easing.Quadratic.Out)
-//                 .onUpdate(({ s, y, ry }) => {
-//                     instance.scale.setScalar(s);
-//                     instance.position.y = y;
-//                     instance.rotation.y = ry;
-//                 });
-
-//             // 2. ФАЗА: Падіння та зникнення (Fall & Fade)
-//             const fallDown = new Tween(animData)
-//                 .to({ 
-//                     s: 0, 
-//                     y: worldPosition.y - 0.2,
-//                     rx: animData.rx + Math.PI * 2
-//                 }, 600 + Math.random() * 400)
-//                 .easing(Easing.Quadratic.In)
-//                 .onUpdate(({ s, y, rx }) => {
-//                     instance.scale.setScalar(s);
-//                     instance.position.y = y;
-//                     instance.rotation.x = rx;
-//                 })
-//                 .onComplete(() => {
-//                     instance.removeFromParent();
-//                 });
-
-//             jumpUp.chain(fallDown);
-//             jumpUp.start();
-//             TweenC.add(jumpUp);
-//             TweenC.add(fallDown);
-//         }
-//     }
-// }
-
 export class WoodParticleSpawner {
     private static readonly PARTICLE_COUNT = 3; 
     private static readonly SPREAD_RADIUS = 2;
@@ -114,17 +39,15 @@ export class WoodParticleSpawner {
                 ry: instance.rotation.y
             };
 
-            // Кінцевий розмір моделі (можна налаштувати під свій ассет)
             const finalScale = 0.5 + Math.random() * 0.2;
 
-            // 1. ФАЗА: Стрибок вгору та розліт в сторони (Arc Launch)
             const jumpUp = new Tween(animData)
                 .to({ 
                     s: finalScale,
-                    x: targetX, // Рух вбік починається одразу
+                    x: targetX,
                     z: targetZ,
-                    y: worldPosition.y + 1.2, // Висота стрибка
-                    ry: animData.ry + Math.PI // Обертання в польоті
+                    y: worldPosition.y + 1.2,
+                    ry: animData.ry + Math.PI
                 }, 400)
                 .easing(Easing.Quadratic.Out)
                 .onUpdate(({ s, x, y, z, ry }) => {

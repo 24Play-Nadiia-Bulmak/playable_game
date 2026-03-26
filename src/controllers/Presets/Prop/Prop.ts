@@ -1,5 +1,5 @@
 import { Mesh, MeshBasicMaterial, Object3D, Vector3 } from "three";
-import { TweenC, UpdateController } from "@24tools/playable_template";
+import { TweenC } from "@24tools/playable_template";
 import { Easing, Tween } from "@tweenjs/tween.js";
 import { PhysicsBody } from "../../PhysicsC";
 import { TriggerSystem } from "../Trigger/TriggerSystem";
@@ -67,7 +67,6 @@ export class Prop {
     takeDamage(amount: number = 1) {
         if (this._broken) return;
         this._hp -= amount;
-        this._timeSinceLastDamage = 0;
 
         // Check whether we've crossed the threshold for the next layer removal.
         const stepsShouldBeRemoved = Math.min(
