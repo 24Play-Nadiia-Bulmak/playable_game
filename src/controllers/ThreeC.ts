@@ -6,11 +6,6 @@ import { BatchedParticleRenderer } from "three.quarks";
 
 export class ThreeC extends ThreeC_internal {
   static particleRenderer: InstanceType<typeof BatchedParticleRenderer>;
-
-  /// <summary>
-  /// Creates and registers the BatchedParticleRenderer used by all VFX in the scene.
-  /// Must be called once during scene initialization, before any VfxSpawner.init() calls.
-  /// </summary>
   static initParticleRenderer(): void {
     this.particleRenderer = new BatchedParticleRenderer();
     this.addToScene(this.particleRenderer);
@@ -51,7 +46,7 @@ export class ThreeC extends ThreeC_internal {
     light.shadow.mapSize.width = 1024;
     light.shadow.mapSize.height = 1024;
 
-    const ambLight = new AmbientLight(0xffffff, 0.4); // soft white light
+    const ambLight = new AmbientLight(0xffffff, 0.4);
     this.addToScene(ambLight);
     this.addToScene(light);
 
@@ -61,7 +56,7 @@ export class ThreeC extends ThreeC_internal {
   static setupDirectionalLight() {
     let dirLight = this.defaultDirectionalLight;
 
-    dirLight.position.set(8, 10, 4); //default; light shining from top
+    dirLight.position.set(8, 10, 4);
 
     let d = 10;
     dirLight.shadow.camera.left = -d;

@@ -104,7 +104,7 @@ export class HudC
     static addDelivered(count: number): void
     {
         this._deliveryTotal += count;
-        const level   = Math.floor(this._deliveryTotal / PLANKS_PER_LEVEL) + 1;
+        const level   = Math.floor(this._deliveryTotal / PLANKS_PER_LEVEL);
         const inLevel = this._deliveryTotal % PLANKS_PER_LEVEL;
         const percent = (inLevel / PLANKS_PER_LEVEL) * 100;
 

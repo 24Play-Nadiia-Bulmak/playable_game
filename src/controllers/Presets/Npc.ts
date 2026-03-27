@@ -89,16 +89,15 @@ import { Player } from "./Player";
                     1,
                     PhysicsLayer.Npc,
                     PhysicsLayer.Wall | PhysicsLayer.Player,
-                    0.3,   // sphere radius
-                    true,  // kinematic — гравець відштовхується від NPC, але NPC не отримує імпульсів
+                    0.3,
+                    true,
                 );
 
                 const body = this.physics.getPhysicsBody();
-                // body.userData = { name: "npc" };
 
-                body.angularFactor.set(0, 0, 0);   // блокуємо обертання від зіткнень
-                body.linearDamping = 0.9;          // затухання — персонаж не ковзає після зупинки
-                body.sleepSpeedLimit = 0;       // body.sleepTimeLimit = 0.1; // NPC може заснути, якщо не рухається протягом 0.1 секунди
+                body.angularFactor.set(0, 0, 0);
+                body.linearDamping = 0.9;
+                body.sleepSpeedLimit = 0;
             }
         
             private UpdateMovementState(dir: THREE.Vector3, weight: number) {
@@ -145,23 +144,6 @@ import { Player } from "./Player";
         private MoveVisual(delta: number) {
             const lerpSpeed = 20;
             const targetPos = (Vector3CToT(this.physics.getPhysicsBody().position));
-    
             this.container.position.lerp(targetPos, delta * lerpSpeed)
         }
-
-        // takeDamage(amount: number): void
-        // {
-        //     if (this._dead) return;
-        //     this._hp -= amount;
-        //     if (this._hp <= 0) this._die();
-        // }
-
-        // private _die(): void
-        // {
-        //     this._dead = true;
-        //     TriggerSystem.removeTrigger(this.triggerZone); // fires onExit → Player.IsAttacking = false
-        //     this.container.removeFromParent();
-        //     this.physics.destroy();
-        //     UpdateController.Instance.onUpdate.removeListeners(this.updateDelegate);
-        // }
 }

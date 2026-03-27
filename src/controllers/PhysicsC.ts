@@ -6,7 +6,6 @@ import {
 import { Box3, Object3D, Vector3 } from "three";
 import { Body, Box, Quaternion, Sphere, Vec3 } from "cannon-es";
 
-/** Configures cannon-es world to use a fixed 1/60 timestep with at most 3 sub-steps per frame. */
 export class PhysicsC
 {
     static initFixedStep(): void
@@ -20,8 +19,6 @@ export class PhysicsC
         {
             try
             {
-                // cannon-es fixedStep tracks elapsed time internally;
-                // we only override dt and maxSubSteps.
                 Physics_internal.physicsWorld?.fixedStep(1 / 60, 3);
             }
             catch (e) { }
@@ -62,12 +59,6 @@ export class PhysicsBody {
     let size = new Vector3();
     bbox.getSize(size);
 
-    // if you need custom size
-    // if (col_group === PhysicsLayer.wall) {
-    //   size.x = size.z = 1;
-    //   size.y = 1;
-    // }
-
     threeObj.quaternion.copy(oldQuaternion); // повертаємо оригінальний кватерніон назад
 
     this.body = new Body({
@@ -91,14 +82,6 @@ export class PhysicsBody {
       threeObj.rotation.z,
       "XYZ"
     );
-
-    // if you need sync three obj and physics body
-    // if (isEnemy) {
-    //   let pair = new PhysicsObjPair(threeObj, this.body);
-    //   PhysicsC_Instance.addPhysicsPair(pair);
-
-    //   this.pair = pair;
-    // }
 
     Physics_internal.physicsWorld &&
       Physics_internal.physicsWorld.addBody(this.body);

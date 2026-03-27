@@ -12,7 +12,6 @@ export class TriggerZone {
     onExit: (() => void) | null = null;
     onStay: (() => void) | null = null;
 
-    // Довільні дані прив'язані до цієї зони (наприклад, Prop)
     data: any = null;
 
     private source: Object3D | null = null;

@@ -14,7 +14,6 @@ export class CameraC extends CameraC_internal {
       this.camera.rotation.x = rotation.x;
       this.camera.rotation.y = rotation.y;
       this.camera.rotation.z = rotation.z;
-      // this.camera.position.copy(position.clone()); // встановлюємо позицію камери в залежності від орієнтації екрану
       if (this.camera instanceof PerspectiveCamera) {
         this.camera.fov = portraitOrientation
           ? Number(CATEGORY["camera_fov_p"])

@@ -27,10 +27,13 @@ export class LootState implements IState {
         private rotation: RotationC,
     ) {
         this._onLoopDelegate = new Delegate<{}>(() => {
+            const elapsed = this._cycleTimer;
             this.character.playAnimation(BaseAnimation.Loot);
             this._cycleTimer = 0;
             this._shakeTriggered = false;
-            this._applyDamage();
+            if (elapsed >= this._lootDuration * 0.5) {
+                this._applyDamage();
+            }
         });
     }
 
@@ -83,31 +86,26 @@ export class LootState implements IState {
     }
     
     onUpdate(delta: number) {
-        // Release triggers where player has exited or prop was destroyed
         const exited = this._lockedTriggers.filter(t => !t.isPlayerInside);
         for (const trigger of exited) {
-            if (this._cycleTimer > 0) this._applyDamageTo(trigger);
             (trigger.data as Prop | null)?.hideBar();
         }
         if (exited.length > 0) {
             this._lockedTriggers = this._lockedTriggers.filter(t => t.isPlayerInside);
         }
 
-        // Lock onto all newly activated triggers in range
         const wasEmpty = this._lockedTriggers.length === 0;
         const allActive = TriggerSystem.getAllActiveLootTriggers(["wood", "stone", "herb"]);
         for (const trigger of allActive) {
             if (this._lockedTriggers.includes(trigger)) continue;
             this._lockedTriggers.push(trigger);
             (trigger.data as Prop | null)?.showBar();
-            // If already past the shake point this cycle, shake the newly acquired prop immediately
             if (this._shakeTriggered) {
                 (trigger.data as Prop | null)?.shake();
                 VfxSpawner.spawnHit(trigger.position.clone().add(new Vector3(0, 1, 0)));
             }
         }
 
-        // Restart animation cycle when first trigger is acquired after having none
         if (wasEmpty && this._lockedTriggers.length > 0) {
             this.character.playAnimation(BaseAnimation.Loot);
             this._cycleTimer = 0;
@@ -133,7 +131,6 @@ export class LootState implements IState {
     onExit() {
         this.character.onAnimLoop.removeListeners(this._onLoopDelegate);
         this.rotation.lookAtTarget = null;
-        if (this._cycleTimer > 0) this._applyDamage();
         for (const trigger of this._lockedTriggers) {
             (trigger.data as Prop | null)?.hideBar();
         }

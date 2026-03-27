@@ -4,7 +4,6 @@ import { Texture, Vector3 } from "three";
 type FxResource = { texture: Texture; info: object };
 
 export class VfxSpawner {
-    /** Hit flash on a lootable prop (used on each shake cycle). */
     static spawnHit(worldPos: Vector3): void {
         const res = ResourcesC.getResource<FxResource>("fx", "Hit");
         if (!res?.texture) return;
@@ -20,7 +19,6 @@ export class VfxSpawner {
         });
     }
 
-    /** Destruction burst when a prop is fully broken. */
     static spawnBreak(worldPos: Vector3): void {
         const res = ResourcesC.getResource<FxResource>("fx", "Break");
         if (!res?.texture) return;
@@ -36,7 +34,6 @@ export class VfxSpawner {
         });
     }
 
-    /** Sparkle that plays when the player collects a resource. */
     static spawnResCollected(worldPos: Vector3): void {
         const res = ResourcesC.getResource<FxResource>("fx", "ResCollected");
         if (!res?.texture) return;
@@ -52,7 +49,6 @@ export class VfxSpawner {
         });
     }
 
-    /** Impact flash displayed at the target position each time the player fires. */
     static spawnShootEffect(worldPos: Vector3): void {
         const res = ResourcesC.getResource<FxResource>("fx", "Hit");
         if (!res?.texture) return;
@@ -68,7 +64,6 @@ export class VfxSpawner {
         });
     }
 
-    /** Dust poof used when a prop respawns. */
     static spawnSpawn(worldPos: Vector3): void {
         const res = ResourcesC.getResource<FxResource>("fx", "Step");
         if (!res?.texture) return;

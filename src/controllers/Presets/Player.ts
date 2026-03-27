@@ -76,21 +76,20 @@ export class Player {
         this.inited = true
         const asset = ResourcesC.getResource<GLTF>(ResourcesType.Mesh, MeshType.Character)
         this.character = new Character(asset);
-// console.log(this.character)
         this.character.playAnimation(BaseAnimation.Idle)
-        this.container.add(this.character.tObj); // контейнер для візуального представлення гравця, який буде рухатися по фізиці, а не сама модель, щоб не було проблем з колізією та анімацією
+        this.container.add(this.character.tObj); 
         ThreeC.addToScene(this.container);
 
-        this.container.position.set(0, 0, 0);
+        this.container.position.set(2, 0, 3);
 
         this.InitPhisic();
         const input = new PlayerInput();
         this.input = input;
         const speed = 5;
-        const rotationSpeed = 25; // high slerp factor for near-instant directional response
+        const rotationSpeed = 25;
         const acceleration = 20;
         const deceleration = 40;
-        const stopDeceleration = 10; // smooth glide-to-stop when joystick is released
+        const stopDeceleration = 10;
         this.movement = new MoveC(this.input, speed, acceleration, deceleration);
         this.rotation = new RotationC(this.container, this.input, rotationSpeed, true);
 
@@ -98,10 +97,10 @@ export class Player {
         this.initInventory();
         this.InitDetectionRing();
 
-        this.updateDelegate = new Delegate<number>((delta) => this.Update(delta)); // прив'язуємо оновлення гравця до загального оновлення гри
-        UpdateController.Instance.onUpdate.addListener(this.updateDelegate); // додаємо наш метод оновлення до контролера оновлення, щоб він викликався кожного кадру
+        this.updateDelegate = new Delegate<number>((delta) => this.Update(delta));
+        UpdateController.Instance.onUpdate.addListener(this.updateDelegate);
         this.wearUnarmed();
-        FollowCameraC.Init(this.container); // ініціалізуємо камеру, щоб вона слідувала за гравцем
+        FollowCameraC.Init(this.container);
     }
 
     private static InitDetectionRing() {
@@ -130,18 +129,15 @@ export class Player {
             this.container,
             () => this.movement.Direction,
             () => Player.dealAttackDamage(),
-            // (freeze) => { Player._isShootingFreeze = freeze; },
         );
 
         this._stateMachine = new StateMachine();
 
-        // AttackState and LootState are mutually exclusive: attack takes priority via IsAttacking flag.
-        // LootState can escalate to AttackState (NPC enters while looting), but not the reverse.
         this._stateMachine.setTransitionTable(new Map<IState, IState[]>([
             [this._idleState,   [this._runState, this._lootState, this._attackState]],
             [this._runState,    [this._idleState, this._lootState, this._attackState]],
             [this._lootState,   [this._idleState, this._runState, this._attackState]],
-            [this._attackState, [this._idleState, this._runState]],
+            [this._attackState, [this._idleState, this._runState, this._lootState]],
         ]));
 
         this._stateMachine.changeState(this._idleState);
@@ -162,7 +158,6 @@ export class Player {
             PhysicsLayer.Wall | PhysicsLayer.Npc,
         );
         const body = this.physics.getPhysicsBody();
-        // body.userData = { name: "player" };
 
         body.angularFactor.set(0, 0, 0);
         body.linearDamping = 0.9;
@@ -186,10 +181,6 @@ export class Player {
             }
         }
 
-        // Lock movement as soon as the player enters a loot zone so the character
-        // decelerates naturally, then transition to LootState once fully stopped.
-        // this.movement.isLocked = this.IsLooting;
-
         if (this.IsLooting && isStopped) {
             if (sm.currentState !== this._lootState) {
                 sm.changeState(this._lootState);
@@ -206,16 +197,6 @@ export class Player {
                 sm.changeState(this._runState);
             }
         }
-    }
-
-    private static checkCollision() {
-        this.physics.getPhysicsBody().addEventListener("collide", (e) => {
-            const name = (e.body as any).userData?.name;
-            if (e.body.collisionFilterGroup === PhysicsLayer.Wall) {
-                console.log("collided with wall:", name);
-                return true;
-            }
-        });
     }
 
     private static UpdateDetectionRing(delta: number) {
@@ -235,9 +216,6 @@ export class Player {
         this._stateMachine.update(delta);
         this.UpdateDetectionRing(delta);
 
-        // While a one-shot PistolShoot is playing, zero out the physics velocity so
-        // the character doesn't slide. MoveC keeps tracking the joystick the whole
-        // time, so movement resumes instantly and at full speed the moment the shot ends.
         const velDir = this._isShootingFreeze ? new THREE.Vector3() : dir;
         this.physics.getPhysicsBody().velocity.copy(Vector3TToC(velDir));
         this.MoveVisual(delta);
@@ -250,7 +228,6 @@ export class Player {
         this.container.position.lerp(targetPos, delta * lerpSpeed)
     }
 
-    /** Deals 1 point of damage to the nearest NPC whose trigger zone the player is inside. */
     private static dealAttackDamage(): void
     {
         const trigger = TriggerSystem.getNearestActiveTrigger("npc");

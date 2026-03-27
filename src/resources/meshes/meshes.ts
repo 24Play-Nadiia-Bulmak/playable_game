@@ -7,7 +7,7 @@ export const meshes : ConvertResourceType = {
   resources: [
     {
       name: "character",
-      value: ConvertToBase64WhenRelease('./models/ZombiePunk_Character.glb'), // ConvertToBase64WhenRelease!
+      value: ConvertToBase64WhenRelease('./models/ZombiePunk_Character.glb'),
     },
         {
       name: "npc",
@@ -21,14 +21,10 @@ export const meshes : ConvertResourceType = {
       name: "progress_bar",
       value: ConvertToBase64WhenRelease('./models/progress_bar_new.glb'),
     },
-        {
-      name: "zone",
-      value: ConvertToBase64WhenRelease('./models/zone.glb'),
-    },
-        {
+    {
       name: "wood_particle",
       value: ConvertToBase64WhenRelease('./models/particle_1.glb'),
     },
   ],
   loader: Template3d.meshLoader
-}// get/set with ResourcesC.getResource<GLTF>("mesh", name)
+}

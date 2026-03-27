@@ -68,7 +68,6 @@ export class Prop {
         if (this._broken) return;
         this._hp -= amount;
 
-        // Check whether we've crossed the threshold for the next layer removal.
         const stepsShouldBeRemoved = Math.min(
             this._totalSteps,
             Math.floor((this._maxHp - this._hp) / this._hpPerStep),
@@ -79,9 +78,7 @@ export class Prop {
             this._currentStep++;
         }
 
-        // Update bar: remaining fraction of steps still alive.
         const progress = (this._totalSteps - this._currentStep) / this._totalSteps;
-        console.log(`[Prop] takeDamage → step ${this._currentStep}/${this._totalSteps}, hp ${this._hp}/${this._maxHp}, progress ${(progress * 100).toFixed(1)}%`);
         this._bar?.setProgress(progress);
 
         if (this._currentStep >= this._totalSteps) {
@@ -89,7 +86,6 @@ export class Prop {
         }
     }
 
-    /** Plays the fly-up / shrink animation on a mesh without removing it from the scene. Returns the tween so callers can chain callbacks. */
     playHitAnimation(obj: Object3D, duration: number = 800) {
         const startScale = obj.scale.x;
         const startY = obj.position.y;
@@ -108,8 +104,7 @@ export class Prop {
                 if ((obj as any).material && (obj as any).material.transparent) {
                     (obj as any).material.opacity = scale / startScale;
                 }
-            }).delay(200); // Stagger hit animations for multiple meshes to avoid uniform scaling and create a more natural effect.
-
+            }).delay(200);
         tween.start();
         
 
@@ -117,19 +112,14 @@ export class Prop {
         return tween;
     }
 
-    /** Plays the hit animation and removes the object from the scene once it finishes. */
     private _playDisappearAnimation(obj: Object3D, duration: number = 600): void {
-        // this.playHitAnimation(obj, duration).onComplete(() => {
             obj.removeFromParent();
-        // });
     }
 
-    /** Removes a single mesh layer and its corresponding shadow (if any). */
     private _removeLayer(index: number) {
         const mesh = this._meshes[index];
         if (!mesh) return;
 
-        // Redirect the bar anchor to the next live mesh before removing this one.
         if (index === this._barHostIndex) {
             const nextMesh = this._meshes[index + 1];
             if (nextMesh) {
@@ -176,20 +166,37 @@ export class Prop {
         });
         if (overlays.length === 0) return;
 
-        CameraC.shake(0.1, 0.05);
-
+        
         const data = { opacity: 0.9 };
         const flashOut = new Tween(data)
             .to({ opacity: 0 }, 500)
             .easing(Easing.Quadratic.Out)
+            .onStart(() => {
+                CameraC.shake(0.1, 0.05);
+            })
             .onUpdate(({ opacity }) => {
                 overlays.forEach(o => { (o.material as MeshBasicMaterial).opacity = opacity; });
             })
             .onComplete(() => {
-                overlays.forEach(o => {
-                    (o.material as MeshBasicMaterial).dispose();
-                    o.removeFromParent();
-                });
+                CameraC.shake(0.1, 0.05);
+
+                const data2 = { opacity: 0.7 };
+                const flashOut2 = new Tween(data2)
+                    .to({ opacity: 0 }, 200)
+                    .easing(Easing.Quadratic.Out)
+                    .onUpdate(({ opacity }) => {
+                        overlays.forEach(o => { (o.material as MeshBasicMaterial).opacity = opacity; });
+                    })
+                    .onComplete(() => {
+                        overlays.forEach(o => {
+                            (o.material as MeshBasicMaterial).dispose();
+                            o.removeFromParent();
+                        });
+                    });
+
+                overlays.forEach(o => { (o.material as MeshBasicMaterial).opacity = 0.7; });
+                flashOut2.start();
+                TweenC.add(flashOut2);
             });
 
         flashOut.start();
@@ -205,72 +212,7 @@ export class Prop {
         this._playFlashAnimation(target, shadowSet);
         const siblings = target.parent.children;
         this._siblingsCount = siblings.length;
-        // this.playHitAnimation(mesh);
         const spawnPos = mesh.getWorldPosition(new Vector3());
         WoodParticleSpawner.spawn(spawnPos);
-
-        // siblings.forEach((child) => {
-        //     const ox = child.scale.x;
-        //     const oy = child.scale.y;
-        //     const oz = child.scale.z;
-        //     const oPy = child.position.y;
-
-        //     const scaleData = { sx: ox, sy: oy, sz: oz };
-        //     const posData = { py: oPy };
-
-        //     const squish = new Tween(scaleData)
-        //         .to({ sx: ox * 1.18, sy: oy * 0.82, sz: oz * 1.18 }, 60) // Виправив час з 600 на 60 згідно з коментарем
-        //         .easing(Easing.Quadratic.In)
-        //         .onUpdate(({ sx, sy, sz }) => {
-        //             child.scale.set(sx, sy, sz);
-        //         });
-
-        //     // Spring phase
-        //     const springBack = new Tween(scaleData)
-        //         .to({ sx: ox, sy: oy, sz: oz }, 80)
-        //         .easing(Easing.Elastic.Out)
-        //         .onUpdate(({ sx, sy, sz }) => {
-        //             child.scale.set(sx, sy, sz);
-        //         })
-        //         .onComplete(() => {
-        //             child.scale.set(ox, oy, oz);
-        //         });
-
-        //     // Pop up phase
-        //     const popUp = new Tween(posData)
-        //         .to({ py: oPy + 0.25 }, 80)
-        //         .easing(Easing.Quadratic.Out)
-        //         .onUpdate(({ py }) => {
-        //             child.position.y = py;
-        //         });
-
-        //     const bounceDown = new Tween(posData)
-        //         .to({ py: oPy }, 380)
-        //         .easing(Easing.Bounce.Out)
-        //         .onUpdate(({ py }) => {
-        //             child.position.y = py;
-        //         })
-        //         // .onComplete(() => {
-        //         //     child.position.y = oPy;
-                    
-        //         //     // Ефекти часто краще запускати лише один раз (наприклад, для головного меша)
-        //         //     // або для кожного, якщо це дрібні частинки
-        //         //     if (child === target) {
-        //             //     }
-        //             // });
-                    
-
-        //     // squish.chain(springBack);
-        //     // popUp.chain(bounceDown);
-
-        //     // popUp.start();
-        //     // squish.start();
-
-        //     // Додаємо в контролер
-        //     // TweenC.add(squish);
-        //     // TweenC.add(springBack);
-        //     // TweenC.add(popUp);
-        //     // TweenC.add(bounceDown);
-        // });
     }
 }

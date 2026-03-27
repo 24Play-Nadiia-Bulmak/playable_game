@@ -6,16 +6,9 @@ import { ThreeC } from "../../ThreeC";
 import { ResourcesType } from "../Enums/ResourcesType";
 import { MeshType } from "../Enums/MeshType";
 
-/// <summary>
-/// 3-D world-space progress bar that hovers above a prop anchor mesh and
-/// always faces the camera. Designed to visualise looting/HP progress.
-/// Call show()/hide() to toggle visibility and setProgress(percent) to
-/// update the fill level.
-/// </summary>
 export class LootProgressBar
 {
-    private static readonly HEIGHT_OFFSET = -0.75;
-    /** Lerp speed for the middle-ground "delayed" indicator (units/sec). */
+    private static readonly HEIGHT_OFFSET = 0;
     private static readonly MIDDLE_LERP_SPEED: number = 3;
 
     private readonly _root: Object3D;
@@ -23,7 +16,6 @@ export class LootProgressBar
     private _middleGroundMesh: Object3D | null = null;
     private _fillInitialScaleX: number = 1;
     private _middleGroundInitialScaleX: number = 1;
-    /** Target scale X that the middle-ground mesh lerps towards each frame. */
     private _middleGroundTargetScaleX: number = 1;
     private _isVisible: boolean = false;
     private _percentage: number = 100;
@@ -32,15 +24,6 @@ export class LootProgressBar
     private readonly _worldPos = new Vector3();
     private readonly _camWorldPos = new Vector3();
 
-    /// <summary>
-    /// Initializes the progress bar by cloning the shared 'progress_bar' GLTF resource
-    /// and adding it to the scene. The bar is hidden by default.
-    ///
-    /// @param getAnchor   Callback that returns the live anchor Object3D above which
-    ///                    the bar should be positioned each frame.
-    /// @param totalSteps  Total number of mesh layers the owning Prop has.
-    ///                    Used to derive the fill percentage from a step index.
-    /// </summary>
     constructor(private readonly _getAnchor: () => Object3D | null, private readonly _totalSteps: number)
     {
         const gltf = ResourcesC.getResource<GLTF>(ResourcesType.Mesh, MeshType.ProgressBar);
@@ -54,8 +37,6 @@ export class LootProgressBar
         this._root.visible = false;
         ThreeC.addToScene(this._root);
 
-        // The fill mesh is identified by "fill" in its name (case-insensitive).
-        // This mesh is scaled on the X axis to represent the current fill percentage.
         this._root.traverse((child) =>
         {
             if (this._fillMesh === null && child.name.toLowerCase().includes("ui_foreground"))
@@ -80,8 +61,6 @@ export class LootProgressBar
 
     show(): void
     {
-        // Snap the middle-ground to the current fill target so it never "slides in" from
-        // a stale position when the bar becomes visible again after being hidden.
         if (this._middleGroundMesh)
         {
             this._middleGroundMesh.scale.x = this._middleGroundTargetScaleX;
@@ -97,12 +76,6 @@ export class LootProgressBar
         this._isVisible = false;
     }
 
-    /// <summary>
-    /// Updates the visual fill level of the progress bar.
-    ///
-    /// @param percent  Value in [0, 1] — 1 means full, 0 means empty.
-    ///                 Values outside the range are clamped.
-    /// </summary>
     setProgress(percent: number): void
     {
         if (!this._fillMesh) return;
@@ -110,20 +83,12 @@ export class LootProgressBar
         const clamped = Math.max(0, Math.min(1, percent));
         const targetScaleX = this._fillInitialScaleX * clamped;
 
-        // Compensate X position so the fill always shrinks from the right
-        // (left-anchored effect) even when the mesh pivot is at its centre.
         const delta = this._fillInitialScaleX - targetScaleX;
         this._fillMesh.scale.x = targetScaleX;
-        // this._fillMesh.position.x = -delta / 2;
 
-        // Middle-ground trails the fill via lerp — just update the target here.
         this._middleGroundTargetScaleX = targetScaleX;
     }
 
-    /// <summary>
-    /// Removes the bar from the scene and unregisters the update delegate.
-    /// Must be called when the owning Prop is permanently destroyed.
-    /// </summary>
     destroy(): void
     {
         UpdateController.Instance.onUpdate.removeListeners(this._updateDelegate);
@@ -147,9 +112,9 @@ export class LootProgressBar
 
         anchor.getWorldPosition(this._worldPos);
         this._root.position.set(
-            this._worldPos.x,
+            this._worldPos.x +0.25  ,
             this._worldPos.y + LootProgressBar.HEIGHT_OFFSET,
-            this._worldPos.z,
+            this._worldPos.z + 0.75,
         );
 
         const camera = CameraC.camera;

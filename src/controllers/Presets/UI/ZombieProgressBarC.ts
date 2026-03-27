@@ -62,7 +62,7 @@ export class ZombieProgressBarC
     {
         if (!this._trackEl) return;
         this._trackEl.classList.remove('zombie-progress-bump');
-        void this._trackEl.offsetWidth; // force reflow to restart animation
+        void this._trackEl.offsetWidth;
         this._trackEl.classList.add('zombie-progress-bump');
     }
 }

@@ -63,7 +63,7 @@ export class AttackState implements IState {
             this._shootTimer = this._shootInterval;
         } else {
             this._isReady = false;
-            this._isWeaponDrawn = true; // mark weapon as being drawn immediately
+            this._isWeaponDrawn = true;
             this.character.playAnimation(BaseAnimation.WeaponTakeOut, true, 0.01);
             this.character.AnimationSpeed = 2;
             this.character.onAnimFinish.addListener(this._onTakeOutFinishDelegate);

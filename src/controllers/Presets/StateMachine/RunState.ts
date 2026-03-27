@@ -16,8 +16,6 @@ export class RunState implements IState {
     }
 
     onUpdate(_delta: number) {
-        // Synchronise animation playback speed with actual movement speed (0–1)
-        // so foot cycles match displacement and prevent the "skating" effect.
         this.character.AnimationSpeed = this.getWeight();
     }
 
