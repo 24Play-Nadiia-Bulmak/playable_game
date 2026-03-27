@@ -108,7 +108,6 @@ export class LootProgressBar
         if (!this._fillMesh) return;
 
         const clamped = Math.max(0, Math.min(1, percent));
-        console.log(`[LootProgressBar] setProgress → ${(clamped * 100).toFixed(1)}% (raw=${percent.toFixed(3)})`);
         const targetScaleX = this._fillInitialScaleX * clamped;
 
         // Compensate X position so the fill always shrinks from the right

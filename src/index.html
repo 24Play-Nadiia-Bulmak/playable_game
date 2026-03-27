@@ -12,6 +12,9 @@
     <link href="./css/loader.css" rel="stylesheet" />
     <link href="./css/main.css" rel="stylesheet" />
     <link href="./css/ui.css" rel="stylesheet" />
+    <link href="./css/hud.css" rel="stylesheet" />
+    <link href="./css/delivery-bar.css" rel="stylesheet" />
+    <link href="./css/zombie-progress.css" rel="stylesheet" />
     <style id="animations"></style>
   </head>
   <body>
@@ -33,22 +36,36 @@
 
     <div id="constructor">
       <div id="ui">
+        <div id="ui__top">
+        <div id="zombie-progress">
+            <div class="zombie-progress__header">ZOMBIE INVASION</div>
+            <div id="zombie-progress__track">
+                <div id="zombie-progress__fill">
+                  <img src="../resources/images/Icon_Zombie_Head.webp" id="zombie-progress__icon" alt="zombie" />
+                </div>
+            </div>
+        </div>
         <div id="hud">
           <div class="hud-item hud-item--wood">
-            <span class="hud-count" data-type="wood">0</span>
+            <img class="hud-icon" src="../resources/images/ResourceBackground_Wood.webp" />
+            <div class="hud-count" data-type="wood">0</div>
           </div>
-          <div class="hud-item hud-item--herb">
-            <span class="hud-count" data-type="herb">0</span>
+          <div class="hud-item hud-item--metal">
+            <img class="hud-icon" src="../resources/images/ResourceBackground_Metal.webp" />
+            <div class="hud-count" data-type="metal">0</div>
           </div>
         </div>
+        </div>
+        <div id="ui__middle">
         <div id="delivery-bar">
-          <div id="delivery-bar__header">
-            <span id="delivery-bar__level">Lv. 1</span>
-            <span id="delivery-bar__count">0 / 7</span>
+          <div class="delivery-bar__icons">
+            <img class="delivery-bar__icon delivery-bar__icon--background" src="../resources/images/Tool_Background.webp" />
+            <img class="delivery-bar__icon delivery-bar__icon--weapon" src="../resources/images/Tool_1.webp" />
           </div>
-          <div id="delivery-bar__track">
-            <div id="delivery-bar__fill"></div>
+          <div id="delivery-bar__footer">
+            <div id="delivery-bar__level">LVL 0</div>
           </div>
+        </div>
         </div>
       </div>
       <div id="editor"></div>

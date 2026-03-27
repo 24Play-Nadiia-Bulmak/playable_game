@@ -108,7 +108,7 @@ export class HudC
         const inLevel = this._deliveryTotal % PLANKS_PER_LEVEL;
         const percent = (inLevel / PLANKS_PER_LEVEL) * 100;
 
-        if (this._deliveryLvlEl)   this._deliveryLvlEl.textContent   = `Lv. ${level}`;
+        if (this._deliveryLvlEl)   this._deliveryLvlEl.textContent   = `LVL ${level}`;
         if (this._deliveryCountEl) this._deliveryCountEl.textContent  = `${inLevel} / ${PLANKS_PER_LEVEL}`;
         if (this._deliveryFillEl)  this._deliveryFillEl.style.width   = `${percent}%`;
         if (this._deliveryTrackEl) this._deliveryTrackEl.style.height = `${12 + percent * 0.12}px`;
@@ -132,6 +132,11 @@ export class HudC
     static getDeliveryBarRect(): DOMRect | null
     {
         return this._deliveryBarEl?.getBoundingClientRect() ?? null;
+    }
+
+    static getDeliveredInLevel(): number
+    {
+        return this._deliveryTotal % PLANKS_PER_LEVEL;
     }
 
     static isLevelComplete(): boolean

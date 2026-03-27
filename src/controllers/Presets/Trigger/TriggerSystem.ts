@@ -73,6 +73,11 @@ export class TriggerSystem {
         return nearest ?? null;
     }
 
+    static getAllActiveLootTriggers(types: string[]): TriggerZone[]
+    {
+        return this.triggers.filter(t => types.includes(t.resourceType) && t.isPlayerInside);
+    }
+
     static hasAnyActiveTrigger(resourceType: string): boolean {
         return this.triggers.some(t => t.resourceType === resourceType && t.isPlayerInside);
     }

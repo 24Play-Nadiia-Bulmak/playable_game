@@ -21,6 +21,7 @@ import { AttackState } from "./StateMachine/AttackState";
 import { ResourseSystem } from "./ResourseSystem/ResourseSystem";
 import { TriggerSystem } from "./Trigger/TriggerSystem";
 import { HudC } from "./UI/HudC";
+import { ZombieProgressBarC } from "./UI/ZombieProgressBarC";
 
  
 export class Player {
@@ -129,7 +130,7 @@ export class Player {
             this.container,
             () => this.movement.Direction,
             () => Player.dealAttackDamage(),
-            (freeze) => { Player._isShootingFreeze = freeze; },
+            // (freeze) => { Player._isShootingFreeze = freeze; },
         );
 
         this._stateMachine = new StateMachine();
@@ -149,6 +150,7 @@ export class Player {
     private static initInventory() {
         this.inventory = new ResourseSystem();
         HudC.init(this.inventory);
+        ZombieProgressBarC.init();
     }
 
     private static InitPhisic() {
@@ -186,7 +188,7 @@ export class Player {
 
         // Lock movement as soon as the player enters a loot zone so the character
         // decelerates naturally, then transition to LootState once fully stopped.
-        this.movement.isLocked = this.IsLooting;
+        // this.movement.isLocked = this.IsLooting;
 
         if (this.IsLooting && isStopped) {
             if (sm.currentState !== this._lootState) {

@@ -1,10 +1,8 @@
-import { BoxGeometry, Mesh, MeshStandardMaterial, Object3D, PerspectiveCamera, Vector3 } from "three";
+import { BoxGeometry, Mesh, MeshStandardMaterial, Object3D, Vector3 } from "three";
 import { ThreeC } from "./ThreeC";
-import { InputC, JoystickC, UpdateController } from "@24tools/playable_template";
-import { CameraC } from "./CameraC";
+import { InputC } from "@24tools/playable_template";
 import { Player } from "./Presets/Player";
 import { PhysicsBody, PhysicsC, PhysicsLayer } from "./PhysicsC";
-// import { addBoundingBoxHelper } from "./Presets/Helper";
 import { Npc } from "./Presets/Npc";
 import { TriggerSystem } from "./Presets/Trigger/TriggerSystem";
 import { TriggerZone } from "./Presets/Trigger/TriggerZone";

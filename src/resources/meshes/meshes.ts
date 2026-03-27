@@ -29,10 +29,6 @@ export const meshes : ConvertResourceType = {
       name: "wood_particle",
       value: ConvertToBase64WhenRelease('./models/particle_1.glb'),
     },
-    {
-      name: "coin",
-      value: ConvertToBase64WhenRelease('./models/coin_handmade.glb'),
-    },
   ],
   loader: Template3d.meshLoader
 }// get/set with ResourcesC.getResource<GLTF>("mesh", name)

@@ -1,0 +1,115 @@
+/* ══════════════════════════════════════════════════════════════
+   Delivery progress bar (left-center)
+   Units: vw (portrait) / vh (landscape)
+   ══════════════════════════════════════════════════════════════ */
+
+#delivery-bar {
+    position: absolute;
+    top: 65%;
+    left: 2.5vw;
+    pointer-events: none;
+    z-index: 10;
+    width: 16vw;
+    height: 16vw;
+}
+
+#delivery-bar__icons {
+    width: 9vw;
+    height: 9vw;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.delivery-bar__icon {
+    position: absolute;
+    inset: 0;
+    width: 16vw;
+    height: 16vw;
+    object-fit: contain;
+}
+
+.delivery-bar__icon--weapon {
+    /* sits on top of background */
+    z-index: 1;
+    height: 12vw;
+}
+
+#delivery-bar__footer {
+    position: relative;
+    /* bottom: 1vw; */
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-direction: column;
+
+    width: 100%;
+    height: 100%;
+    color: #ffffff;
+    font-size: 3vw;
+    font-weight: bold;
+    text-shadow: 0 0.3vw 0.8vw rgba(0, 0, 0, 0.8);
+      z-index: 5;
+}
+
+#delivery-bar__level {
+    display: block;
+    width: auto;
+}
+
+@media (orientation: landscape) {
+#delivery-bar {
+    position: absolute;
+    top: 55%;
+    left: 2.5vh;
+    pointer-events: none;
+    z-index: 10;
+    width: 16vh;
+    height: 16vh;
+}
+
+#delivery-bar__icons {
+    width: 9vh;
+    height: 9vh;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.delivery-bar__icon {
+    position: absolute;
+    inset: 0;
+    width: 16vh;
+    height: 16vh;
+    object-fit: contain;
+}
+
+.delivery-bar__icon--weapon {
+    /* sits on top of background */
+    z-index: 1;
+    height: 12vh;
+}
+
+#delivery-bar__footer {
+    position: relative;
+    /* bottom: 1vw; */
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-direction: column;
+
+    width: 100%;
+    height: 100%;
+    color: #ffffff;
+    font-size: 3vh;
+    font-weight: bold;
+    text-shadow: 0 0.3vh 0.8vh rgba(0, 0, 0, 0.8);
+      /* -webkit-text-stroke: 2px black; */
+      /* top: 12vh;
+      left: 5vh; */
+      z-index: 5;
+}
+
+#delivery-bar__level {
+    display: block;
+    width: auto;
+}
+}

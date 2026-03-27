@@ -1,5 +1,5 @@
-import { Object3D, Raycaster, Vector2, Vector3 } from "three";
-import { ResourcesC, TweenC } from "@24tools/playable_template";
+import { Box3, CanvasTexture, Color, DoubleSide, Mesh, MeshBasicMaterial, Object3D, PlaneGeometry, Raycaster, Vector2, Vector3 } from "three";
+import { Delegate, ResourcesC, TweenC, UpdateController } from "@24tools/playable_template";
 import { Easing, Tween } from "@tweenjs/tween.js";
 import { GLTF } from "three/examples/jsm/loaders/GLTFLoader";
 import { ThreeC } from "../../ThreeC";
@@ -21,6 +21,11 @@ export class PayZone
     private readonly _position: Vector3;
     private          _bobTweens: Tween<any>[] = [];
     private          _isCollecting: boolean = false;
+
+    private          _fillMesh:        Mesh;
+    private          _fillSize:        number = 0;
+    private readonly _labelMesh:      Mesh;
+    private readonly _updateDelegate: Delegate<number>;
 
     onPaid?: () => void;
 
@@ -49,9 +54,96 @@ export class PayZone
 
         this._startIdleAnimation();
 
+        const bbox     = new Box3().setFromObject(this._mesh);
+        const meshSize = new Vector3();
+        bbox.getSize(meshSize);
+        const fillSize = Math.min(meshSize.x, meshSize.z);
+        this._fillSize = fillSize;
+
+        this._fillMesh = PayZone._createFillSquare(fillSize);
+        // Anchor fill at the front edge (+Z side) so it grows toward the back (bottom-to-top)
+        this._fillMesh.position.set(0, 0.02, fillSize / 2);
+        this._mesh.add(this._fillMesh);
+
         this._trigger = new TriggerZone(position, radius, "payzone", false);
         this._trigger.onStay = () => this._onPlayerEnter();
         TriggerSystem.addTrigger(this._trigger);
+
+        this._labelMesh = PayZone._createBuildLabel();
+        // Lie flat on the ground plane, centred on the zone
+        this._labelMesh.rotation.x = -Math.PI / 2;
+        this._labelMesh.position.set(0, 0.05, 0);
+        this._mesh.add(this._labelMesh);
+
+        this._updateDelegate = UpdateController.Instance.onUpdate.addDelegate(() => this._tickLabel());
+    }
+
+    /** No per-frame update needed for a flat label — kept for future use. */
+    private _tickLabel(): void {}
+
+    /** Creates a semi-transparent green square that fills along the Z axis as planks are delivered. */
+    private static _createFillSquare(size: number): Mesh
+    {
+        const geometry  = new PlaneGeometry(size, size);
+        const material  = new MeshBasicMaterial({
+            color:       new Color('#8CBA44'),
+            transparent: true,
+            opacity:     0.7,
+            depthWrite:  false,
+            side:        DoubleSide,
+        });
+        const mesh      = new Mesh(geometry, material);
+        mesh.rotation.x = -Math.PI / 2;
+        // Start at full width but zero depth — scale.y animates 0→1 (world Z direction)
+        mesh.scale.set(1, 0, 1);
+        return mesh;
+    }
+
+    /** Smoothly tweens fill scale.y to `target` (0–1) over `durationMs`.
+     *  Simultaneously tracks position.z so the back edge stays fixed and fill grows forward.
+     */
+    private _tweenFill(target: number, durationMs: number = 200): void
+    {
+        const clampedTarget = Math.min(Math.max(target, 0), 1);
+        const data          = { y: this._fillMesh.scale.y };
+        const tween         = new Tween(data)
+            .to({ y: clampedTarget }, durationMs)
+            .easing(Easing.Quadratic.Out)
+            .onUpdate(({ y }) =>
+            {
+                this._fillMesh.scale.y    = y;
+                // Keep front edge (+Z) anchored: center shifts toward back as fill grows
+                this._fillMesh.position.z = this._fillSize / 2 * (1 - y);
+            });
+        tween.start();
+        TweenC.add(tween);
+    }
+
+    /** Creates a flat ground-plane with the word BUILD rendered onto a canvas texture.
+     *  The geometry is sized to fill ~50% of the zone disc diameter.
+     */
+    private static _createBuildLabel(): Mesh
+    {
+        const canvas   = document.createElement('canvas');
+        canvas.width   = 512;
+        canvas.height  = 128;
+        const ctx      = canvas.getContext('2d')!;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font         = 'bold 88px gameFont, sans-serif';
+        ctx.textAlign    = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.strokeStyle  = '#000000';
+        ctx.lineWidth    = 7;
+        ctx.strokeText('BUILD', canvas.width * 0.5, canvas.height * 0.5);
+        ctx.fillStyle    = '#ffffff';
+        ctx.fillText('BUILD', canvas.width * 0.5, canvas.height * 0.5);
+
+        const texture  = new CanvasTexture(canvas);
+        const material = new MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, side: DoubleSide });
+        // 4:1 aspect ratio canvas → PlaneGeometry width keeps that ratio; width = 50% of zone size
+        const geometry = new PlaneGeometry(1.5, 0.375);
+        return new Mesh(geometry, material);
     }
 
     private _onPlayerEnter(): void
@@ -64,10 +156,20 @@ export class PayZone
         if (woodCount <= 0) return;
 
         this._isCollecting = true;
+        // this._labelMesh.visible = false;
         Player.inventory.minusResource("wood", woodCount);
 
         const visualCount = Math.min(woodCount, MAX_PLANKS);
         const playerPos   = Player.Position.clone().add(new Vector3(0, 1, 0)); // Aim for player's head, not feet
+
+        // Fill target corresponds to the fraction of this level that will be complete after delivery
+        const alreadyDelivered = HudC.getDeliveredInLevel();
+        const fillTarget       = Math.min((alreadyDelivered + visualCount) / MAX_PLANKS, 1);
+
+        // Start fill immediately covering both flight phases duration
+        const phase1Duration = (visualCount - 1) * STAGGER_MS + 600 + 50;
+        const phase2Duration = (visualCount - 1) * STAGGER_MS + 500 + 50;
+        this._tweenFill(fillTarget, phase1Duration + phase2Duration);
 
         // Wood planks fly from player → zone
         this._spawnPlanks3D(playerPos, this._position, visualCount, 600, () =>
@@ -78,7 +180,10 @@ export class PayZone
             this._spawnPlanks3D(this._position, barTarget, visualCount, 500, () =>
             {
                 this._animateDisappear();
-            }, true, () => HudC.addDelivered(1));
+            }, true, () =>
+            {
+                HudC.addDelivered(1);
+            });
         });
     }
 
@@ -230,7 +335,9 @@ export class PayZone
             })
             .onComplete(() =>
             {
+                // _labelMesh and _fillMesh are children of mesh — removed automatically
                 mesh.removeFromParent();
+                UpdateController.Instance.onUpdate.removeListeners(this._updateDelegate);
                 this.onPaid?.();
             });
 
@@ -242,6 +349,7 @@ export class PayZone
     private _reinitialize(): void
     {
         this._isCollecting = false;
+        this._labelMesh.visible = true;
         this._startIdleAnimation();
     }
 

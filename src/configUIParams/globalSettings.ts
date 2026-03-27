@@ -48,7 +48,7 @@ export const globalSettings: ConfigUiParamsCategories[] = [
           [
             -10,
             10,
-            6
+            8
           ],
           [
             -10,
