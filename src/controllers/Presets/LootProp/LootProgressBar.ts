@@ -1,5 +1,5 @@
 import { GLTF } from "three/examples/jsm/loaders/GLTFLoader";
-import { Object3D, Vector3 } from "three";
+import { Object3D, Quaternion, Vector3 } from "three";
 import { Delegate, ResourcesC, UpdateController } from "@24tools/playable_template";
 import { CameraC } from "../../CameraC";
 import { ThreeC } from "../../ThreeC";
@@ -8,7 +8,8 @@ import { MeshType } from "../Enums/MeshType";
 
 export class LootProgressBar
 {
-    private static readonly HEIGHT_OFFSET = 0;
+    private static readonly HEIGHT_OFFSET = -0.5;
+    private static readonly Z_OFFSET = 0.5;
     private static readonly MIDDLE_LERP_SPEED: number = 3;
 
     private readonly _root: Object3D;
@@ -22,6 +23,7 @@ export class LootProgressBar
 
     private readonly _updateDelegate: Delegate<number>;
     private readonly _worldPos = new Vector3();
+    private readonly _worldQuat = new Quaternion();
 
     constructor(private readonly _getAnchor: () => Object3D | null, private readonly _totalSteps: number)
     {
@@ -112,13 +114,14 @@ export class LootProgressBar
         this._root.position.set(
             this._worldPos.x + 0.25,
             this._worldPos.y + LootProgressBar.HEIGHT_OFFSET,
-            this._worldPos.z,
+            this._worldPos.z + LootProgressBar.Z_OFFSET,
         );
 
         const camera = CameraC.camera;
         if (camera)
         {
-            this._root.quaternion.copy(camera.quaternion);
+            camera.getWorldQuaternion(this._worldQuat);
+            this._root.quaternion.copy(this._worldQuat);
         }
     }
 }

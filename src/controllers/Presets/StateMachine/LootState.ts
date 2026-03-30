@@ -18,6 +18,7 @@ export class LootState implements IState {
     private _lockedTriggers: TriggerZone[] = [];
     private _cycleTimer: number = 0;
     private _shakeTriggered: boolean = false;
+    private _damageTriggered: boolean = false;
 
     private get _lootDuration(): number {
         return this.character.animationList[BaseAnimation.Loot]?.duration ?? 1.5;
@@ -28,13 +29,10 @@ export class LootState implements IState {
         private rotation: RotationC,
     ) {
         this._onLoopDelegate = new Delegate<{}>(() => {
-            const elapsed = this._cycleTimer;
             this.character.playAnimation(BaseAnimation.Loot);
             this._cycleTimer = 0;
             this._shakeTriggered = false;
-            if (elapsed >= this._lootDuration * LOOT.DAMAGE_THRESHOLD_RATIO) {
-                this._applyDamage();
-            }
+            this._damageTriggered = false;
         });
     }
 
@@ -79,6 +77,7 @@ export class LootState implements IState {
         this._lockedTriggers = [];
         this._cycleTimer = 0;
         this._shakeTriggered = false;
+        this._damageTriggered = false;
         this.character.playAnimation(BaseAnimation.Loot);
         this.character.onAnimLoop.addListener(this._onLoopDelegate);
         this.character.setWeaponLoadout(WeaponType.Unarmed);
@@ -109,6 +108,7 @@ export class LootState implements IState {
             this.character.playAnimation(BaseAnimation.Loot);
             this._cycleTimer = 0;
             this._shakeTriggered = false;
+            this._damageTriggered = false;
         }
 
         this.rotation.lookAtTarget = this._getNearestLockedTrigger()?.position ?? null;
@@ -121,6 +121,11 @@ export class LootState implements IState {
                     (trigger.data as LootProp | null)?.shake();
                     VfxSpawner.spawnHit(trigger.position.clone().add(new Vector3(0, LOOT.VFX_Y_OFFSET, 0)));
                 }
+            }
+
+            if (!this._damageTriggered && this._cycleTimer >= this._lootDuration * LOOT.DAMAGE_THRESHOLD_RATIO) {
+                this._damageTriggered = true;
+                this._applyDamage();
             }
         }
 
@@ -136,6 +141,7 @@ export class LootState implements IState {
         this._lockedTriggers = [];
         this._cycleTimer = 0;
         this._shakeTriggered = false;
+        this._damageTriggered = false;
         this.character.setWeaponLoadout(WeaponType.Unarmed);
     }
 }

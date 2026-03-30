@@ -50,7 +50,6 @@ export class LootProp {
     showBar(): void
     {
         const progress = (this._totalSteps - this._currentStep) / this._totalSteps;
-        console.log(`[Prop] showBar → step ${this._currentStep}/${this._totalSteps}, progress ${(progress * 100).toFixed(1)}%`);
         this._bar?.show();
         this._bar?.setProgress(progress);
     }
