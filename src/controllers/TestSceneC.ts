@@ -22,7 +22,7 @@ export class TestSceneC {
     this.createMap();
     this.InitPlayer();
     this.createPayZone();
-    // this.initNpc(3);
+    this.initNpc(3);
 
     InputC.onTouchDown.addDelegate((event) => {
       // console.log("onMouseDown", event);
