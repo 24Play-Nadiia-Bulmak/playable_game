@@ -15,9 +15,9 @@ export class PlayerInput implements IMoveInput {
         const options: JoystickManagerOptions = {
             color: "white",
             zone: document.getElementById("joystick_zone") as HTMLElement,
+            position: { left: "50%", top: "50%" },
             size: minSize * joystickSizeAspect,
             restJoystick: true,
-            dynamicPage: true,
             catchDistance: minSize * joystickSizeAspect / 2,
             fadeTime: fadeTime,
         };
