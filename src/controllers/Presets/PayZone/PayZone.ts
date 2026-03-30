@@ -355,15 +355,20 @@ export class PayZone
 
     private _onDeliveryComplete(): void
     {
-        this._isCollecting = false;
         if (HudC.isLevelComplete())
         {
-            this._resetFill();
+            // Keep _isCollecting=true until the reset animation finishes
+            // so a consecutive delivery cannot start before the fill returns to 0.
+            this._resetFill(() => { this._isCollecting = false; });
             this.onPaid?.();
+        }
+        else
+        {
+            this._isCollecting = false;
         }
     }
 
-    private _resetFill(): void
+    private _resetFill(onComplete?: () => void): void
     {
         this._stopActiveFillTweens();
         const data  = { y: this._fillMesh.scale.y };
@@ -377,7 +382,9 @@ export class PayZone
             })
             .onComplete(() =>
             {
+                this._fillMesh.scale.y    = 0;
                 this._fillMesh.position.z = this._fillSize / 2;
+                onComplete?.();
             });
         this._activeFillTweens.push(tween);
         tween.start();
