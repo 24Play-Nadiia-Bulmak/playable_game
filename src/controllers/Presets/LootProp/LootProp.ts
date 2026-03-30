@@ -4,11 +4,13 @@ import { Easing, Tween } from "@tweenjs/tween.js";
 import { PhysicsBody } from "../../PhysicsC";
 import { TriggerSystem } from "../Trigger/TriggerSystem";
 import { TriggerZone } from "../Trigger/TriggerZone";
-import { WoodParticleSpawner } from "./WoodParticleSpawner";
+import { WoodParticleSpawner } from "../Spawner/WoodParticleSpawner";
 import { CameraC } from "../../CameraC";
 import { LootProgressBar } from "./LootProgressBar";
+import { ANIMATION_DURATION } from "../Constants/animationDuration";
+import { PROP } from "../Constants/prop";
 
-export class Prop {
+export class LootProp {
     private _hp: number;
     private readonly _maxHp: number;
     private _broken: boolean = false;
@@ -33,8 +35,6 @@ export class Prop {
         this._maxHp = hp * this._totalSteps;
         this._hp = this._maxHp;
         this._hpPerStep = this._maxHp / this._totalSteps;
-        // console.log(_meshes, '_meshes')
-        
         this._siblingsCount = _meshes.length;
         this._bar = new LootProgressBar(() => this._meshes[this._barHostIndex] ?? this._meshes[0], this._totalSteps);
     }
@@ -86,7 +86,7 @@ export class Prop {
         }
     }
 
-    playHitAnimation(obj: Object3D, duration: number = 800) {
+    playHitAnimation(obj: Object3D, duration: number = ANIMATION_DURATION.HIT): Tween {
         const startScale = obj.scale.x;
         const startY = obj.position.y;
         const rotationVar = [obj.rotation.x, obj.rotation.y, obj.rotation.z];
@@ -94,17 +94,17 @@ export class Prop {
 
         const data = { scale: startScale, y: startY, rotation: randomRotation };
         const tween = new Tween(data)
-            .to({ scale: 0, y: startY + 2, rotation: randomRotation + Math.PI }, duration)
+            .to({ scale: 0, y: startY + PROP.HIT_Y_OFFSET, rotation: randomRotation + Math.PI }, duration)
             .easing(Easing.Back.In)
             .onUpdate(({ scale, y, rotation }) => {
                 obj.scale.setScalar(scale);
-                obj.position.y = y + 0.5 * Math.sin((1 - scale) * Math.PI);
+                obj.position.y = y + PROP.HIT_ARC_AMPLITUDE * Math.sin((1 - scale) * Math.PI);
                 obj.rotation.x = rotation;
 
                 if ((obj as any).material && (obj as any).material.transparent) {
                     (obj as any).material.opacity = scale / startScale;
                 }
-            }).delay(200);
+            }).delay(PROP.HIT_DELAY_MS);
         tween.start();
         
 
@@ -112,7 +112,7 @@ export class Prop {
         return tween;
     }
 
-    private _playDisappearAnimation(obj: Object3D, duration: number = 600): void {
+    private _playDisappearAnimation(obj: Object3D, duration: number = ANIMATION_DURATION.DISAPPEAR): void {
             obj.removeFromParent();
     }
 
@@ -156,7 +156,7 @@ export class Prop {
             if (!child.isMesh || exclude.has(child)) return;
             const overlay = new Mesh(
                 child.geometry,
-                new MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, depthWrite: false }),
+                new MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: PROP.FLASH_OPACITY, depthWrite: false }),
             );
             overlay.position.copy(child.position);
             overlay.rotation.copy(child.rotation);
@@ -167,9 +167,9 @@ export class Prop {
         if (overlays.length === 0) return;
 
         
-        const data = { opacity: 0.9 };
+        const data = { opacity: PROP.FLASH_OPACITY };
         const flashOut = new Tween(data)
-            .to({ opacity: 0 }, 500)
+            .to({ opacity: 0 }, PROP.FLASH_DURATION_MS)
             .easing(Easing.Quadratic.Out)
             .onStart(() => {
                 CameraC.shake(0.1, 0.05);
@@ -180,9 +180,9 @@ export class Prop {
             .onComplete(() => {
                 CameraC.shake(0.1, 0.05);
 
-                const data2 = { opacity: 0.7 };
+                const data2 = { opacity: PROP.FLASH2_OPACITY };
                 const flashOut2 = new Tween(data2)
-                    .to({ opacity: 0 }, 200)
+                    .to({ opacity: 0 }, PROP.FLASH2_DURATION_MS)
                     .easing(Easing.Quadratic.Out)
                     .onUpdate(({ opacity }) => {
                         overlays.forEach(o => { (o.material as MeshBasicMaterial).opacity = opacity; });
@@ -194,13 +194,13 @@ export class Prop {
                         });
                     });
 
-                overlays.forEach(o => { (o.material as MeshBasicMaterial).opacity = 0.7; });
-                flashOut2.start();
+                overlays.forEach(o => { (o.material as MeshBasicMaterial).opacity = PROP.FLASH2_OPACITY; });
                 TweenC.add(flashOut2);
+                flashOut2.start();
             });
 
-        flashOut.start();
         TweenC.add(flashOut);
+        flashOut.start();
     }
 
     shake(): void {

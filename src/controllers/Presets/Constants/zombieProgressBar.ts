@@ -1,0 +1,4 @@
+export const ZOMBIE_PROGRESS_BAR = {
+    CYCLE_DURATION: 5,
+    RESET_PAUSE_MS: 800,
+};

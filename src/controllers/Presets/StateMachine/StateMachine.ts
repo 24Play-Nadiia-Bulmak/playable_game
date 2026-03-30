@@ -1,8 +1,4 @@
-export interface IState {
-    onEnter(): void;
-    onUpdate(delta: number): void;
-    onExit(): void;
-}
+import { IState } from "../Interfaces/stateMachine";
 
 export class StateMachine {
     private _currentState: IState | null = null;

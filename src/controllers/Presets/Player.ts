@@ -4,24 +4,31 @@ import { ResourcesType } from "./Enums/ResourcesType";
 import { MeshType } from "./Enums/MeshType";
 import { GLTF } from "three/examples/jsm/loaders/GLTFLoader";
 import { BaseAnimation } from "./Enums/BaseAnimation";
-import { PhysicsBody, PhysicsLayer } from "../PhysicsC";
+import { PhysicsBody } from "../PhysicsC";
 import { Object3D } from "three";
 import { ThreeC } from "../ThreeC";
 import { PlayerInput } from "./Input/PlayerInput";
-import { MoveC } from "./Movment/MoveC";
-import { Vector3CToT, Vector3TToC } from "./Helper";
-import { RotationC } from "./Movment/RotationC";
-import { FollowCameraC } from "./Movment/CameraMovment/FollowCamera";
+import { MoveC } from "./Movement/MoveC";
+import { Vector3CToT, Vector3TToC } from "./Utils/Helper";
+import { RotationC } from "./Movement/RotationC";
+import { FollowCameraC } from "./Movement/CameraMovement/FollowCamera";
 import * as THREE from 'three';
-import { StateMachine, IState } from "./StateMachine/StateMachine";
+import { StateMachine } from "./StateMachine/StateMachine";
 import { IdleState } from "./StateMachine/IdleState";
 import { RunState } from "./StateMachine/RunState";
 import { LootState } from "./StateMachine/LootState";
 import { AttackState } from "./StateMachine/AttackState";
-import { ResourseSystem } from "./ResourseSystem/ResourseSystem";
+import { ResourceSystem } from "./ResourceSystem/ResourceSystem";
 import { TriggerSystem } from "./Trigger/TriggerSystem";
 import { HudC } from "./UI/HudC";
 import { ZombieProgressBarC } from "./UI/ZombieProgressBarC";
+import { PLAYER } from './Constants/player';
+import { PHYSICS } from './Constants/physics';
+import { ATTACK } from './Constants/attacks';
+import { MOVEMENT } from './Constants/movement';
+import { IState } from "./Interfaces/stateMachine";
+import { WeaponType } from "./Enums/WeaponType";
+import { PhysicsLayer } from "./Enums/Physics";
 
  
 export class Player {
@@ -29,7 +36,7 @@ export class Player {
     static IsAttacking: boolean = false;
     static IsLooting: boolean = false;
 
-    static inventory: ResourseSystem;
+    static inventory: ResourceSystem;
 
     private static updateDelegate: Delegate<number>;
 
@@ -52,7 +59,7 @@ export class Player {
     private static _detectionRing: THREE.Mesh;
     private static _detectionRingTime: number = 0;
 
-    static get diraction() {
+    static get direction() {
         return this.input.CurrentDirection;
     }
 
@@ -82,13 +89,13 @@ export class Player {
 
         this.container.position.set(2, 0, 3);
 
-        this.InitPhisic();
+        this.InitPhysics();
         const input = new PlayerInput();
         this.input = input;
-        const speed = 5;
-        const rotationSpeed = 25;
-        const acceleration = 20;
-        const deceleration = 40;
+        const speed = PLAYER.SPEED;
+        const rotationSpeed = PLAYER.ROTATION_SPEED;
+        const acceleration = PLAYER.ACCELERATION;
+        const deceleration = PLAYER.DECELERATION;
         const stopDeceleration = 10;
         this.movement = new MoveC(this.input, speed, acceleration, deceleration);
         this.rotation = new RotationC(this.container, this.input, rotationSpeed, true);
@@ -104,17 +111,17 @@ export class Player {
     }
 
     private static InitDetectionRing() {
-        const geo = new THREE.RingGeometry(6.0, 6.1, 48, 1, 0, Math.PI * 2);
+        const geo = new THREE.RingGeometry(PLAYER.DETECTION_RING_INNER_RADIUS, PLAYER.DETECTION_RING_OUTER_RADIUS, PLAYER.DETECTION_RING_SEGMENTS, 1, 0, Math.PI * 2);
         const mat = new THREE.MeshBasicMaterial({
             color: 'green',
             side: THREE.DoubleSide,
             transparent: true,
-            opacity: 0.5,
+            opacity: PLAYER.DETECTION_RING_OPACITY,
 
         });
         this._detectionRing = new THREE.Mesh(geo, mat);
         this._detectionRing.rotation.x = -Math.PI / 2;
-        this._detectionRing.position.y = 0.05;
+        this._detectionRing.position.y = PLAYER.DETECTION_RING_Y_OFFSET;
         this._detectionRing.visible = false;
         this.container.add(this._detectionRing);
     }
@@ -144,12 +151,12 @@ export class Player {
     }
 
     private static initInventory() {
-        this.inventory = new ResourseSystem();
+        this.inventory = new ResourceSystem();
         HudC.init(this.inventory);
         ZombieProgressBarC.init();
     }
 
-    private static InitPhisic() {
+    private static InitPhysics() {
         this.physics = new PhysicsBody(
             this.container,
             false,
@@ -160,17 +167,17 @@ export class Player {
         const body = this.physics.getPhysicsBody();
 
         body.angularFactor.set(0, 0, 0);
-        body.linearDamping = 0.9;
-        body.sleepSpeedLimit = 0;  
+        body.linearDamping = PHYSICS.LINEAR_DAMPING;
+        body.sleepSpeedLimit = PHYSICS.SLEEP_SPEED_LIMIT;  
     }
 
     private static UpdateMovementState(dir: THREE.Vector3) {
-        const isStopped = dir.length() < 0.01;
+        const isStopped = dir.length() < MOVEMENT.NEAR_ZERO_THRESHOLD;
         const sm = this._stateMachine;
 
         if (this.IsAttacking) {
             const targetPos = TriggerSystem.getNearestActivePosition("npc");
-            const inRange = !!targetPos && this.container.position.distanceTo(targetPos) <= AttackState.ATTACK_RADIUS;
+            const inRange = !!targetPos && this.container.position.distanceTo(targetPos) <= ATTACK.RADIUS;
             if (!inRange) {
                 this.IsAttacking = false;
             } else {
@@ -204,7 +211,7 @@ export class Player {
         this._detectionRing.visible = npcInRange;
         if (npcInRange) {
             this._detectionRingTime += delta;
-            const pulse = 1 + 0.1 * Math.sin(this._detectionRingTime * 6);
+            const pulse = 1 + PLAYER.DETECTION_RING_PULSE_AMPLITUDE * Math.sin(this._detectionRingTime * PLAYER.DETECTION_RING_PULSE_FREQUENCY);
             this._detectionRing.scale.set(pulse, pulse, pulse);
         }
     }
@@ -222,7 +229,7 @@ export class Player {
     }
 
     private static MoveVisual(delta: number) {
-        const lerpSpeed = 20;
+        const lerpSpeed = PLAYER.VISUAL_LERP_SPEED;
         const targetPos = (Vector3CToT(this.physics.getPhysicsBody().position));
 
         this.container.position.lerp(targetPos, delta * lerpSpeed)
@@ -236,21 +243,15 @@ export class Player {
     }
 
     private static wearWeapon() {
-        this.character.setPartVisible("Weapon_Hand", true);
-        this.character.setPartVisible("Character_Pistol", false);
-        this.character.setPartVisible("Weapon_Back", false);
+        this.character.setWeaponLoadout(WeaponType.Melee);
     }
 
     private static wearPistol() {
-        this.character.setPartVisible("Weapon_Hand", false);
-        this.character.setPartVisible("Character_Pistol", true);
-        this.character.setPartVisible("Weapon_Back", true);
+        this.character.setWeaponLoadout(WeaponType.Pistol);
     }
 
     private static wearUnarmed() {
-        this.character.setPartVisible("Weapon_Hand", false);
-        this.character.setPartVisible("Character_Pistol", false);
-        this.character.setPartVisible("Weapon_Back", true);
+        this.character.setWeaponLoadout(WeaponType.Unarmed);
     }
 }
 

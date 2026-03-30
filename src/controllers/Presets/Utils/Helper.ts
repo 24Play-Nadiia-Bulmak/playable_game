@@ -1,6 +1,7 @@
 import { Vec3 } from "cannon-es";
-import { Vector3, BoxHelper, Object3D, WireframeGeometry, LineSegments, LineBasicMaterial, Color } from "three";
-import { ThreeC } from "../ThreeC";
+import { Vector3, BoxHelper, Object3D, WireframeGeometry, LineSegments, LineBasicMaterial } from "three";
+import { ThreeC } from "../../ThreeC";
+import { COLORS } from "../Constants/colors";
 
 export function Vector3CToT(value: Vec3) {
     return new Vector3(value.x, value.y, value.z);
@@ -10,13 +11,13 @@ export function Vector3TToC(value: Vector3) {
     return new Vec3(value.x, value.y, value.z);
 }
 
-export function addBoundingBoxHelper(obj: Object3D, color: number = 0x00ff00) {
+export function addBoundingBoxHelper(obj: Object3D, color: number = COLORS.WIREFRAME) {
     const helper = new BoxHelper(obj, color);
     ThreeC.addToScene(helper);
     return helper;
 }
 
-export function addWireframeHelper(obj: Object3D, color: number = 0xff0000) {
+export function addWireframeHelper(obj: Object3D, color: number = COLORS.WIREFRAME) {
     obj.traverse((child: any) => {
         if (child.isMesh && child.geometry) {
             const wireGeometry = new WireframeGeometry(child.geometry);

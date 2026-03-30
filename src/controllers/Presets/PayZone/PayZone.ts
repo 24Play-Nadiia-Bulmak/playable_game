@@ -1,4 +1,4 @@
-import { Box3, CanvasTexture, Color, DoubleSide, Mesh, MeshBasicMaterial, Object3D, PlaneGeometry, Raycaster, Vector2, Vector3 } from "three";
+import { Box3, CanvasTexture, Color, DoubleSide, FrontSide, Mesh, MeshBasicMaterial, Object3D, PlaneGeometry, Raycaster, Vector2, Vector3 } from "three";
 import { Delegate, ResourcesC, TweenC, UpdateController } from "@24tools/playable_template";
 import { Easing, Tween } from "@tweenjs/tween.js";
 import { GLTF } from "three/examples/jsm/loaders/GLTFLoader";
@@ -10,9 +10,8 @@ import { CameraC } from "../../CameraC";
 import { ResourcesType } from "../Enums/ResourcesType";
 import { MeshType } from "../Enums/MeshType";
 import { HudC } from "../UI/HudC";
-
-const STAGGER_MS        = 80;
-export const MAX_PLANKS = 7;
+import { PAY_ZONE } from "../Constants/payZone";
+import { COLORS } from "../Constants/colors";
 
 export class PayZone
 {
@@ -31,7 +30,7 @@ export class PayZone
     constructor(radius: number = 0)
     {
         const mapMesh  = ThreeC.getObject("map");
-        this._mesh     = mapMesh.getObjectByName("UI_Tool_Zone")!;
+        this._mesh     = mapMesh.getObjectByName(PAY_ZONE.MESH_NAME)!;
         this._position = this._mesh.getWorldPosition(new Vector3());
 
         this._startIdleAnimation();
@@ -43,30 +42,36 @@ export class PayZone
         this._fillSize = fillSize;
 
         this._fillMesh = PayZone._createFillSquare(fillSize);
-        this._fillMesh.position.set(0, 0.02, fillSize / 2);
+        this._fillMesh.position.set(0, PAY_ZONE.FILL_MESH_Y_OFFSET, fillSize / 2);
         this._mesh.add(this._fillMesh);
 
-        this._trigger = new TriggerZone(this._position, radius, "payzone", false);
+        this._trigger = new TriggerZone(this._position, radius, PAY_ZONE.TRIGGER_NAME, false);
         this._trigger.onStay = () => this._onPlayerEnter();
         TriggerSystem.addTrigger(this._trigger);
 
         this._labelMesh = PayZone._createBuildLabel();
         this._labelMesh.rotation.x = -Math.PI / 2;
-        this._labelMesh.position.set(0, 0.05, 0);
-        this._mesh.add(this._labelMesh);
+        this._labelMesh.position.copy(this._position);
+        this._labelMesh.position.y += PAY_ZONE.LABEL_Y_OFFSET;
+        this._labelMesh.renderOrder = 1;
+        ThreeC.addToScene(this._labelMesh);
 
         this._updateDelegate = UpdateController.Instance.onUpdate.addDelegate(() => this._tickLabel());
     }
 
-    private _tickLabel(): void {}
+    private _tickLabel(): void
+    {
+        const worldPos = this._mesh.getWorldPosition(new Vector3());
+        this._labelMesh.position.set(worldPos.x, worldPos.y + PAY_ZONE.LABEL_Y_OFFSET, worldPos.z);
+    }
 
     private static _createFillSquare(size: number): Mesh
     {
         const geometry  = new PlaneGeometry(size, size);
         const material  = new MeshBasicMaterial({
-            color:       new Color('#8CBA44'),
+            color:       new Color(COLORS.PAY_ZONE_FILL),
             transparent: true,
-            opacity:     0.7,
+            opacity:     PAY_ZONE.FILL_OPACITY,
             depthWrite:  false,
             side:        DoubleSide,
         });
@@ -100,17 +105,17 @@ export class PayZone
         const ctx      = canvas.getContext('2d')!;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.font         = 'bold 88px gameFont, sans-serif';
+        ctx.font         = PAY_ZONE.LABEL_FONT;
         ctx.textAlign    = 'center';
         ctx.textBaseline = 'middle';
-        ctx.strokeStyle  = '#000000';
+        ctx.strokeStyle  = PAY_ZONE.LABEL_STROKE_COLOR;
         ctx.lineWidth    = 7;
-        ctx.strokeText('BUILD', canvas.width * 0.5, canvas.height * 0.5);
-        ctx.fillStyle    = '#ffffff';
-        ctx.fillText('BUILD', canvas.width * 0.5, canvas.height * 0.5);
+        ctx.strokeText(PAY_ZONE.LABEL_TEXT, canvas.width * 0.5, canvas.height * 0.5);
+        ctx.fillStyle    = PAY_ZONE.LABEL_FILL_COLOR;
+        ctx.fillText(PAY_ZONE.LABEL_TEXT, canvas.width * 0.5, canvas.height * 0.5);
 
         const texture  = new CanvasTexture(canvas);
-        const material = new MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, side: DoubleSide });
+        const material = new MeshBasicMaterial({ map: texture, transparent: true, depthWrite: false, side: FrontSide });
         const geometry = new PlaneGeometry(1.5, 0.375);
         return new Mesh(geometry, material);
     }
@@ -121,26 +126,26 @@ export class PayZone
         if (!Player.IsIdle) return;
 
         const inv       = Player.inventory.Inventory;
-        const woodCount = Math.min(inv["wood"] ?? 0, MAX_PLANKS);
+        const woodCount = Math.min(inv[PAY_ZONE.RESOURCE_WOOD] ?? 0, PAY_ZONE.MAX_PLANKS);
         if (woodCount <= 0) return;
 
         this._isCollecting = true;
-        Player.inventory.minusResource("wood", woodCount);
+        Player.inventory.minusResource(PAY_ZONE.RESOURCE_WOOD, woodCount);
 
-        const visualCount = Math.min(woodCount, MAX_PLANKS);
+        const visualCount = Math.min(woodCount, PAY_ZONE.MAX_PLANKS);
         const playerPos   = Player.Position.clone().add(new Vector3(0, 1, 0));
         const alreadyDelivered = HudC.getDeliveredInLevel();
-        const fillTarget       = Math.min((alreadyDelivered + visualCount) / MAX_PLANKS, 1);
+        const fillTarget       = Math.min((alreadyDelivered + visualCount) / PAY_ZONE.MAX_PLANKS, 1);
 
-        const phase1Duration = (visualCount - 1) * STAGGER_MS + 600 + 50;
-        const phase2Duration = (visualCount - 1) * STAGGER_MS + 500 + 50;
+        const phase1Duration = (visualCount - 1) * PAY_ZONE.STAGGER_MS + PAY_ZONE.PHASE1_BASE_MS + PAY_ZONE.PHASE_BUFFER_MS;
+        const phase2Duration = (visualCount - 1) * PAY_ZONE.STAGGER_MS + PAY_ZONE.PHASE2_BASE_MS + PAY_ZONE.PHASE_BUFFER_MS;
         this._tweenFill(fillTarget, phase1Duration + phase2Duration);
 
-        this._spawnPlanks3D(playerPos, this._position, visualCount, 600, () =>
+        this._spawnPlanks3D(playerPos, this._position, visualCount, PAY_ZONE.PHASE1_BASE_MS, () =>
         {
             const barTarget = this._getDeliveryBarWorldPosition();
             HudC.pulseTrack();
-            this._spawnPlanks3D(this._position, barTarget, visualCount, 500, () =>
+            this._spawnPlanks3D(this._position, barTarget, visualCount, PAY_ZONE.PHASE2_BASE_MS, () =>
             {
                 this._onDeliveryComplete();
             }, true, () =>
@@ -172,13 +177,13 @@ export class PayZone
             setTimeout(() =>
             {
                 const plank = gltf.scene.clone(true);
-                const spread = 0.25;
+                const spread = PAY_ZONE.PLANK_SPAWN_SPREAD;
                 plank.position.set(
                     from.x + (Math.random() - 0.5) * spread,
-                    from.y + Math.random() * 0.2,
+                    from.y + Math.random() * PAY_ZONE.PLANK_HEIGHT_SPREAD,
                     from.z + (Math.random() - 0.5) * spread,
                 );
-                plank.scale.setScalar(0.4 + Math.random() * 0.2);
+                plank.scale.setScalar(PAY_ZONE.PLANK_SCALE_BASE + Math.random() * PAY_ZONE.PLANK_SCALE_SPREAD);
                 const initialScale = plank.scale.x;
 
                 if (fadeOut)
@@ -195,7 +200,7 @@ export class PayZone
 
                 ThreeC.addToScene(plank);
 
-                const arcHeight = 1.2 + Math.random() * 0.8;
+                const arcHeight = PAY_ZONE.ARC_HEIGHT_BASE + Math.random() * PAY_ZONE.ARC_HEIGHT_SPREAD;
                 const data = {
                     x:  plank.position.x,
                     y:  plank.position.y,
@@ -212,10 +217,10 @@ export class PayZone
                         plank.position.set(x, y + arcHeight * Math.sin(t * Math.PI), z);
                         plank.rotation.y = ry;
 
-                        if (fadeOut && t > 0.5)
+                        if (fadeOut && t > PAY_ZONE.FADE_START_THRESHOLD)
                         {
-                            const progress = (t - 0.5) * 2;
-                            plank.scale.setScalar(initialScale * (1 - progress * 0.85));
+                            const progress = (t - PAY_ZONE.FADE_START_THRESHOLD) * 2;
+                            plank.scale.setScalar(initialScale * (1 - progress * PAY_ZONE.FADE_INTENSITY));
                         }
                     })
                     .onComplete(() =>
@@ -227,7 +232,7 @@ export class PayZone
 
                 tween.start();
                 TweenC.add(tween);
-            }, i * STAGGER_MS);
+            }, i * PAY_ZONE.STAGGER_MS);
         }
     }
 
@@ -241,7 +246,7 @@ export class PayZone
 
         const barRect = HudC.getDeliveryBarRect();
         const screenX = barRect ? barRect.left + barRect.width  * 0.5 : window.innerWidth  * 0.5;
-        const screenY = barRect ? barRect.top  + barRect.height * 0.5 : window.innerHeight - 30;
+        const screenY = barRect ? barRect.top  + barRect.height * 0.5 : window.innerHeight - PAY_ZONE.FALLBACK_Y_OFFSET;
 
         const ndcX =  (screenX / window.innerWidth)  * 2 - 1;
         const ndcY = -(screenY / window.innerHeight) * 2 + 1;
@@ -249,7 +254,7 @@ export class PayZone
         camera.updateWorldMatrix(true, false);
         const raycaster = new Raycaster();
         raycaster.setFromCamera(new Vector2(ndcX, ndcY), camera);
-        return raycaster.ray.at(6, new Vector3());
+        return raycaster.ray.at(PAY_ZONE.RAYCASTER_DEPTH, new Vector3());
     }
 
     private _onDeliveryComplete(): void
@@ -275,12 +280,12 @@ export class PayZone
         const data  = { y: baseY };
 
         const bobUp = new Tween(data)
-            .to({ y: baseY + 0.35 }, 900)
+            .to({ y: baseY + PAY_ZONE.BOB_HEIGHT }, PAY_ZONE.BOB_DURATION_MS)
             .easing(Easing.Sinusoidal.InOut)
             .onUpdate(({ y }) => { mesh.position.y = y; });
 
         const bobDown = new Tween(data)
-            .to({ y: baseY }, 900)
+            .to({ y: baseY }, PAY_ZONE.BOB_DURATION_MS)
             .easing(Easing.Sinusoidal.InOut)
             .onUpdate(({ y }) => { mesh.position.y = y; });
 

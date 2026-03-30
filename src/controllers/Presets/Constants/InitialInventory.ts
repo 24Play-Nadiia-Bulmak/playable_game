@@ -1,4 +1,4 @@
-import { Inventory } from "./ResourseSystem";
+import { Inventory } from "../ResourceSystem/ResourceSystem";
 
 export const initialInventory: Inventory = {
     wood: 15,

@@ -1,7 +1,6 @@
 import {
   CameraC_internal,
   CameraType,
-  // JoystickC,
   Physics_internal,
   Template,
   Template3d,
@@ -16,13 +15,13 @@ import { Color } from "three";
 import { Vec3 } from "cannon-es";
 import { PlayerInput } from "../controllers/Presets/Input/PlayerInput";
 export const beforeResourcesLoadedCb = () => {
-  FilterScene.init(); //ініт пост-ефектів(блюр, колір, затемнення)
-  InstallBanner.init(); // CTA, має з'явитись до гри
+  FilterScene.init();
+  InstallBanner.init();
 
-  Template3d.init(); //ініт менеджера завантаження ресурсів та лоадерів для 3д ресурсів
-  CameraC_internal.init(CameraType.perspective); //(perspective або orthographic)
+  Template3d.init();
+  CameraC_internal.init(CameraType.perspective);
   CameraC.setCamera(window.screenSize.portrait); 
-  ThreeC_internal.init(); //ініт рендера, сцени, базового світла та ресайзу
+  ThreeC_internal.init();
   ThreeC.createBaseLights();
   ThreeC.setupDirectionalLight();
   TweenC.init();

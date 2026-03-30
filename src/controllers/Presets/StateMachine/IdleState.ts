@@ -1,15 +1,14 @@
 import { Character } from "../Character/Character";
 import { BaseAnimation } from "../Enums/BaseAnimation";
-import { IState } from "./StateMachine";
+import { WeaponType } from "../Enums/WeaponType";
+import { IState } from "../Interfaces/stateMachine";
 
 export class IdleState implements IState {
     constructor(private character: Character) {}
 
     onEnter() {
         this.character.playAnimation(BaseAnimation.Idle);
-        this.character.setPartVisible("Weapon_Hand", false);
-        this.character.setPartVisible("Character_Pistol", false);
-        this.character.setPartVisible("Weapon_Back", true);
+        this.character.setWeaponLoadout(WeaponType.Unarmed);
     }
 
     onUpdate(_delta: number) {}

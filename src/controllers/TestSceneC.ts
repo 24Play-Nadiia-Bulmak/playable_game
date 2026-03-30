@@ -2,20 +2,16 @@ import { BoxGeometry, Mesh, MeshStandardMaterial, Object3D, Vector3 } from "thre
 import { ThreeC } from "./ThreeC";
 import { InputC } from "@24tools/playable_template";
 import { Player } from "./Presets/Player";
-import { PhysicsBody, PhysicsC, PhysicsLayer } from "./PhysicsC";
+import { PhysicsBody, PhysicsC } from "./PhysicsC";
 import { Npc } from "./Presets/Npc";
 import { TriggerSystem } from "./Presets/Trigger/TriggerSystem";
 import { TriggerZone } from "./Presets/Trigger/TriggerZone";
-import { Prop } from "./Presets/Prop/Prop";
-import { SpawnManager, SpawnConfig } from "./Presets/ResourseSystem/SpawnManager";
+import { LootProp } from "./Presets/LootProp/LootProp";
+import { SpawnManager } from "./Presets/Spawner/SpawnManager";
 import { PayZone } from "./Presets/PayZone/PayZone";
-import { VfxSpawner } from "./Presets/Prop/VfxSpawner";
-
-const WOOD_SPAWN_CONFIG: SpawnConfig = {
-    resourceType: "wood",
-    respawnDelay: 30,
-    maxCount: 10,
-};
+import { VfxSpawner } from "./Presets/Spawner/VfxSpawner";
+import { PhysicsLayer } from "./Presets/Enums/Physics";
+import { WOOD_SPAWN_CONFIG } from "./Presets/Constants/woodSpawn";
 
 export class TestSceneC {
   static init() {
@@ -79,7 +75,7 @@ export class TestSceneC {
     const woodTrigger = new TriggerZone(centerPos, 1.5, "wood", false);
     TriggerSystem.addTrigger(woodTrigger);
 
-    const prop = new Prop(meshes, physicsBodies, woodTrigger, shadows, 3);
+    const prop = new LootProp(meshes, physicsBodies, woodTrigger, shadows, 3);
     woodTrigger.data = prop;
 
     woodTrigger.onEnter = () => {

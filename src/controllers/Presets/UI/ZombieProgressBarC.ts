@@ -1,7 +1,6 @@
 import { Delegate, UpdateController } from "@24tools/playable_template";
-
-const CYCLE_DURATION = 5;
-const RESET_PAUSE_MS = 800;
+import { triggerCssAnimation } from "../Utils/cssUtil";
+import { ZOMBIE_PROGRESS_BAR } from "../Constants/zombieProgressBar";
 
 export class ZombieProgressBarC
 {
@@ -25,7 +24,7 @@ export class ZombieProgressBarC
 
         this._elapsed += delta;
 
-        const t = Math.min(this._elapsed / CYCLE_DURATION, 1);
+        const t = Math.min(this._elapsed / ZOMBIE_PROGRESS_BAR.CYCLE_DURATION, 1);
         this._setPercent((1 - t) * 100);
 
         if (t >= 1)
@@ -50,7 +49,7 @@ export class ZombieProgressBarC
                 this._elapsed = 0;
                 this._resetting = false;
             }));
-        }, RESET_PAUSE_MS);
+        }, ZOMBIE_PROGRESS_BAR.RESET_PAUSE_MS);
     }
 
     private static _setPercent(percent: number): void
@@ -61,8 +60,6 @@ export class ZombieProgressBarC
     private static _triggerBump(): void
     {
         if (!this._trackEl) return;
-        this._trackEl.classList.remove('zombie-progress-bump');
-        void this._trackEl.offsetWidth;
-        this._trackEl.classList.add('zombie-progress-bump');
+        triggerCssAnimation(this._trackEl, 'zombie-progress-bump');
     }
 }

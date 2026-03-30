@@ -111,5 +111,17 @@
 #delivery-bar__level {
     display: block;
     width: auto;
+    }
 }
+
+@keyframes level-up-pulse {
+    0%   { transform: scale(1); }
+    30%  { transform: scale(1.45); }
+    60%  { transform: scale(0.9); }
+    80%  { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+#delivery-bar__level.level-up-pulse {
+    animation: level-up-pulse 0.5s ease-out forwards;
 }

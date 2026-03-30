@@ -1,6 +1,7 @@
 import { Delegate, UpdateController } from "@24tools/playable_template";
 import { IMoveInput } from "../Input/MoveInput";
 import { Vector3 } from "three";
+import { MOVEMENT } from '../Constants/movement';
 
 export class MoveC {
     private input: IMoveInput;
@@ -25,20 +26,20 @@ export class MoveC {
     private update(delta: number) {
         const targetVelocity = this.input.CurrentDirection.clone().multiplyScalar(this.speed);
         
-        if (targetVelocity.length() > 0.1 && this.moveDirection.length() > 0.1) {
+        if (targetVelocity.length() > MOVEMENT.VELOCITY_THRESHOLD && this.moveDirection.length() > MOVEMENT.VELOCITY_THRESHOLD) {
             const dot = targetVelocity.clone().normalize().dot(this.moveDirection.clone().normalize());
             
-            if (dot < -0.5) {
-                this.moveDirection.multiplyScalar(0.2);
+            if (dot < MOVEMENT.DIRECTION_REVERSAL_DOT) {
+                this.moveDirection.multiplyScalar(MOVEMENT.DIRECTION_REVERSAL_DAMPING);
             }
         }
 
-        const isStopping = targetVelocity.length() < 0.01;
+        const isStopping = targetVelocity.length() < MOVEMENT.NEAR_ZERO_THRESHOLD;
         const lerpSpeed = isStopping ? this.deceleration : this.acceleration;
 
         this.moveDirection.lerp(targetVelocity, delta * lerpSpeed);
 
-        if (isStopping && this.moveDirection.length() < 0.05) {
+        if (isStopping && this.moveDirection.length() < MOVEMENT.FINAL_STOP_THRESHOLD) {
             this.moveDirection.set(0, 0, 0);
         }
     }

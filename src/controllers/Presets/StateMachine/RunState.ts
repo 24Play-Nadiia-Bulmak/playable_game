@@ -1,6 +1,7 @@
 import { Character } from "../Character/Character";
 import { BaseAnimation } from "../Enums/BaseAnimation";
-import { IState } from "./StateMachine";
+import { WeaponType } from "../Enums/WeaponType";
+import { IState } from "../Interfaces/stateMachine";
 
 export class RunState implements IState {
     constructor(
@@ -10,9 +11,7 @@ export class RunState implements IState {
 
     onEnter() {
         this.character.playAnimation(BaseAnimation.Run);
-        this.character.setPartVisible("Weapon_Hand", false);
-        this.character.setPartVisible("Character_Pistol", false);
-        this.character.setPartVisible("Weapon_Back", true);
+        this.character.setWeaponLoadout(WeaponType.Unarmed);
     }
 
     onUpdate(_delta: number) {

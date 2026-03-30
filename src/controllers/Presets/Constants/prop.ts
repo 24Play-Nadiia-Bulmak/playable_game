@@ -1,0 +1,9 @@
+export const PROP = {
+    HIT_Y_OFFSET: 2,
+    HIT_ARC_AMPLITUDE: 0.5,
+    HIT_DELAY_MS: 200,
+    FLASH_OPACITY: 0.9,
+    FLASH_DURATION_MS: 500,
+    FLASH2_OPACITY: 0.7,
+    FLASH2_DURATION_MS: 200,
+} as const;

@@ -5,17 +5,20 @@ import { Delegate, ResourcesC, UpdateController } from "@24tools/playable_templa
 import { Object3D } from "three";
 import { NpcInput } from "./Input/NpcInput";
 import { Character } from "./Character/Character";
-import { MoveC } from "./Movment/MoveC";
-import { RotationC } from "./Movment/RotationC";
-import { PhysicsBody, PhysicsLayer } from "../PhysicsC";
+import { MoveC } from "./Movement/MoveC";
+import { RotationC } from "./Movement/RotationC";
+import { PhysicsBody } from "../PhysicsC";
 import { ThreeC } from "../ThreeC";
-import { Vector3CToT, Vector3TToC } from "./Helper";
+import { Vector3CToT, Vector3TToC } from "./Utils/Helper";
 import { NpcMovementState } from "./Enums/MovementState";
 import * as THREE from 'three';
 import { NpcAnimation } from "./Enums/NpcAnimation";
 import { TriggerZone } from "./Trigger/TriggerZone";
 import { TriggerSystem } from "./Trigger/TriggerSystem";
 import { Player } from "./Player";
+import { NPC } from './Constants/npc';
+import { PHYSICS } from './Constants/physics';
+import { PhysicsLayer } from "./Enums/Physics";
 
  export class Npc {
      private container: Object3D = new Object3D;
@@ -30,14 +33,14 @@ import { Player } from "./Player";
      private physics!: PhysicsBody;
      private triggerZone!: TriggerZone;
 
-     private _hp: number = 5;
+     private _hp: number = NPC.INITIAL_HP;
      private _dead: boolean = false;
 
      get Position() {
          return this.container.position;      
      }  
 
-     get diraction() {
+     get direction() {
          return this.movement.Direction;
      }
 
@@ -47,20 +50,20 @@ import { Player } from "./Player";
 
          this.character.playAnimation(NpcAnimation.Idle);
          this.container.add(this.character.tObj);
-         this.container.scale.set(0.5, 0.5, 0.5);
+         this.container.scale.set(NPC.SCALE, NPC.SCALE, NPC.SCALE);
          ThreeC.addToScene(this.container);
 
          const pos = new THREE.Vector3(
-             (Math.random() - 0.5) * 6,
+             (Math.random() - 0.5) * NPC.SPAWN_RADIUS,
              0,
-             (Math.random() - 0.5) * 6
+             (Math.random() - 0.5) * NPC.SPAWN_RADIUS
          );
          this.container.position.copy(pos);
 
-         this.InitPhisic();
+         this.InitPhysics();
 
-         const speed = 3;
-         const acceleration = 2;
+         const speed = NPC.SPEED;
+         const acceleration = NPC.ACCELERATION;
          this.input = new NpcInput();
          this.movement = new MoveC(this.input, speed, acceleration);
          this.rotation = new RotationC(this.container, this.input, speed, true);
@@ -70,7 +73,7 @@ import { Player } from "./Player";
 
          this.triggerZone = new TriggerZone(
              this.container.position,
-             6,
+             NPC.TRIGGER_RADIUS,
              "npc",
              false,
              this.container
@@ -82,7 +85,7 @@ import { Player } from "./Player";
          TriggerSystem.addTrigger(this.triggerZone);
      }
 
-            private InitPhisic() {
+            private InitPhysics() {
                 this.physics = new PhysicsBody(
                     this.container,
                     false,
@@ -90,14 +93,14 @@ import { Player } from "./Player";
                     PhysicsLayer.Npc,
                     PhysicsLayer.Wall | PhysicsLayer.Player,
                     0.3,
-                    true,
                 );
 
                 const body = this.physics.getPhysicsBody();
 
                 body.angularFactor.set(0, 0, 0);
-                body.linearDamping = 0.9;
-                body.sleepSpeedLimit = 0;
+                body.linearFactor.set(1, 0, 1);
+                body.linearDamping = PHYSICS.LINEAR_DAMPING;
+                body.sleepSpeedLimit = PHYSICS.SLEEP_SPEED_LIMIT;
             }
         
             private UpdateMovementState(dir: THREE.Vector3, weight: number) {
@@ -142,7 +145,7 @@ import { Player } from "./Player";
         }
     
         private MoveVisual(delta: number) {
-            const lerpSpeed = 20;
+            const lerpSpeed = NPC.VISUAL_LERP_SPEED;
             const targetPos = (Vector3CToT(this.physics.getPhysicsBody().position));
             this.container.position.lerp(targetPos, delta * lerpSpeed)
         }

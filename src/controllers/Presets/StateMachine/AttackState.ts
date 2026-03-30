@@ -3,14 +3,17 @@ import { Delegate } from "@24tools/playable_template";
 import { Object3D } from "three";
 import { Character } from "../Character/Character";
 import { BaseAnimation } from "../Enums/BaseAnimation";
-import { RotationC } from "../Movment/RotationC";
+import { RotationC } from "../Movement/RotationC";
 import { TriggerSystem } from "../Trigger/TriggerSystem";
-import { IState } from "./StateMachine";
-import { VfxSpawner } from "../Prop/VfxSpawner";
+import { VfxSpawner } from "../Spawner/VfxSpawner";
 import { CameraC } from "../../CameraC";
+import { MOVEMENT } from '../Constants/movement';
+import { ATTACK } from '../Constants/attacks';
+import { WeaponType } from '../Enums/WeaponType';
+import { IState } from '../Interfaces/stateMachine';
 
 export class AttackState implements IState {
-    public static readonly ATTACK_RADIUS = 16;
+    public static readonly ATTACK_RADIUS = ATTACK.RADIUS;
 
     private _isReady: boolean = false;
 
@@ -18,12 +21,12 @@ export class AttackState implements IState {
     private _isShooting: boolean = false;
     private _isInLoopMode: boolean = false;
     private _shootTimer: number = 0;
-    private readonly _shootInterval: number = 0.25;
+    private readonly _shootInterval: number = ATTACK.SHOOT_INTERVAL;
     private _lastAnim: BaseAnimation | null = null;
     private _lastBlendDirAnim: BaseAnimation | null = null;
     private _blendShootTimer: number = 0;
     private _shootAnimDuration: number = 0;
-    private readonly _shootBlendSpeed: number = 2.0;
+    private readonly _shootBlendSpeed: number = ATTACK.BLEND_SPEED;
     private _onTakeOutFinishDelegate: Delegate<{}>;
     private _onShootLoopDelegate: Delegate<{}>
 
@@ -64,20 +67,18 @@ export class AttackState implements IState {
         } else {
             this._isReady = false;
             this._isWeaponDrawn = true;
-            this.character.playAnimation(BaseAnimation.WeaponTakeOut, true, 0.01);
-            this.character.AnimationSpeed = 2;
+            this.character.playAnimation(BaseAnimation.WeaponTakeOut, true, ATTACK.TAKEOUT_FADE);
+            this.character.AnimationSpeed = ATTACK.WEAPON_TAKEOUT_ANIM_SPEED;
             this.character.onAnimFinish.addListener(this._onTakeOutFinishDelegate);
 
             const drawDir = this.getDirection();
             if (drawDir.length() >= 0.01) {
                 const dirAnim = this._getDirectionalAnim(drawDir.clone().normalize());
-                this.character.updateOverlayAnimation(dirAnim, 1, 0.1);
-                this.character.setBlendedAnimSpeed(dirAnim, 1.5);
+                this.character.updateOverlayAnimation(dirAnim, ATTACK.OVERLAY_WEIGHT, ATTACK.OVERLAY_FADE);
+                this.character.setBlendedAnimSpeed(dirAnim, ATTACK.DIR_ANIM_SPEED);
             }
         }
-        this.character.setPartVisible("Weapon_Hand", false);
-        this.character.setPartVisible("Character_Pistol", true);
-        this.character.setPartVisible("Weapon_Back", true);
+        this.character.setWeaponLoadout(WeaponType.Pistol);
     }
 
     onUpdate(delta: number) {
@@ -85,18 +86,18 @@ export class AttackState implements IState {
 
         if (!this._isReady) {
             const drawDir = this.getDirection();
-            if (drawDir.length() >= 0.01) {
+            if (drawDir.length() >= MOVEMENT.NEAR_ZERO_THRESHOLD) {
                 const dirAnim = this._getDirectionalAnim(drawDir.clone().normalize());
-                this.character.updateOverlayAnimation(dirAnim, 1, 0.1);
-                this.character.setBlendedAnimSpeed(dirAnim, 1.5);
+                this.character.updateOverlayAnimation(dirAnim, ATTACK.OVERLAY_WEIGHT, ATTACK.OVERLAY_FADE);
+                this.character.setBlendedAnimSpeed(dirAnim, ATTACK.DIR_ANIM_SPEED);
             } else {
-                this.character.stopOverlayAnimations(0.15);
+                this.character.stopOverlayAnimations(ATTACK.DIR_BLEND_FADE);
             }
             return;
         }
 
         const dir = this.getDirection();
-        const isStopped = dir.length() < 0.01;
+        const isStopped = dir.length() < MOVEMENT.NEAR_ZERO_THRESHOLD;
 
         if (this._isShooting) {
             if (isStopped) {
@@ -114,8 +115,8 @@ export class AttackState implements IState {
                 this._lastBlendDirAnim = null;
                 if (prevDirAnim !== null) {
                     
-                    this.character.playBlendedAnimations([{ animId: prevDirAnim, weight: 1 }], 0.15);
-                    this.character.setBlendedAnimSpeed(prevDirAnim, 1.5);
+                    this.character.playBlendedAnimations([{ animId: prevDirAnim, weight: ATTACK.OVERLAY_WEIGHT }], ATTACK.DIR_BLEND_FADE);
+                    this.character.setBlendedAnimSpeed(prevDirAnim, ATTACK.DIR_ANIM_SPEED);
                     this._lastAnim = prevDirAnim;
                 } else {
                     this._lastAnim = null;
@@ -149,11 +150,11 @@ export class AttackState implements IState {
             const dirAnim = this._getDirectionalAnim(norm);
             this._lastBlendDirAnim = dirAnim;
             this.character.playBlendedAnimations([
-                { animId: BaseAnimation.PistolShoot, weight: 0.45 },
-                { animId: dirAnim, weight: 1 },
-            ], 0.1);
+                { animId: BaseAnimation.PistolShoot, weight: ATTACK.PISTOL_SHOOT_WEIGHT },
+                { animId: dirAnim, weight: ATTACK.OVERLAY_WEIGHT },
+            ], ATTACK.OVERLAY_FADE);
             this.character.setBlendedAnimSpeed(BaseAnimation.PistolShoot, this._shootBlendSpeed);
-            this.character.setBlendedAnimSpeed(dirAnim, 1.5);
+            this.character.setBlendedAnimSpeed(dirAnim, ATTACK.DIR_ANIM_SPEED);
             this.onShoot?.();
             this._spawnShootVfx();
             return;
@@ -177,10 +178,10 @@ export class AttackState implements IState {
         if (this._isWeaponDrawn && !targetInRange) {
             this.character.playAnimation(BaseAnimation.WeaponPutDown, true);
             const putDownDir = this.getDirection();
-            if (putDownDir.length() >= 0.01) {
+            if (putDownDir.length() >= MOVEMENT.NEAR_ZERO_THRESHOLD) {
                 const dirAnim = this._getDirectionalAnim(putDownDir.clone().normalize());
-                this.character.updateOverlayAnimation(dirAnim, 1, 0.1);
-                this.character.setBlendedAnimSpeed(dirAnim, 1.5);
+                this.character.updateOverlayAnimation(dirAnim, ATTACK.OVERLAY_WEIGHT, ATTACK.OVERLAY_FADE);
+                this.character.setBlendedAnimSpeed(dirAnim, ATTACK.DIR_ANIM_SPEED);
             }
             this._isWeaponDrawn = false;
             this._isReady = false;
@@ -200,8 +201,8 @@ export class AttackState implements IState {
     private _enterLoopShootMode() {
         this._isInLoopMode = true;
         this._lastAnim = null;
-        this.character.playAnimation(BaseAnimation.PistolShoot, false, 0.25);
-        this.character.AnimationSpeed = 1.4;
+        this.character.playAnimation(BaseAnimation.PistolShoot, false, ATTACK.DIR_BLEND_FADE);
+        this.character.AnimationSpeed = ATTACK.LOOP_SHOOT_ANIM_SPEED;
         this.character.onAnimLoop.addListener(this._onShootLoopDelegate);
     }
 
@@ -223,23 +224,23 @@ export class AttackState implements IState {
         const right   = new THREE.Vector3(1, 0, 0).applyQuaternion(this.container.quaternion);
         const fwdDot   = norm.dot(forward);
         const rightDot = norm.dot(right);
-        if (fwdDot > 0.5) return BaseAnimation.PistolForward;
-        if (fwdDot < -0.5) return BaseAnimation.PistolBack;
+        if (fwdDot > ATTACK.DIRECTION_THRESHOLD) return BaseAnimation.PistolForward;
+        if (fwdDot < -ATTACK.DIRECTION_THRESHOLD) return BaseAnimation.PistolBack;
         return rightDot >= 0 ? BaseAnimation.PistolLeft : BaseAnimation.PistolRight;
     }
 
     private playIfChanged(anim: BaseAnimation) {
         if (this._lastAnim !== anim) {
             this._lastAnim = anim;
-            this.character.playAnimation(anim, false, 0.25);
-            this.character.AnimationSpeed = 1.5;
+            this.character.playAnimation(anim, false, ATTACK.DIR_BLEND_FADE);
+            this.character.AnimationSpeed = ATTACK.DIR_ANIM_SPEED;
         }
     }
 
     private _updateDirectionalBlend(dirAnim: BaseAnimation) {
         if (this._lastAnim === dirAnim) return;
         this._lastAnim = dirAnim;
-        this.character.playBlendedAnimations([{ animId: dirAnim, weight: 1 }], 0.15);
-        this.character.setBlendedAnimSpeed(dirAnim, 1.5);
+        this.character.playBlendedAnimations([{ animId: dirAnim, weight: ATTACK.OVERLAY_WEIGHT }], ATTACK.DIR_BLEND_FADE);
+        this.character.setBlendedAnimSpeed(dirAnim, ATTACK.DIR_ANIM_SPEED);
     }
 }

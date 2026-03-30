@@ -1,7 +1,7 @@
 import { FXC, ResourcesC } from "@24tools/playable_template";
 import { Texture, Vector3 } from "three";
 
-type FxResource = { texture: Texture; info: object };
+export type FxResource = { texture: Texture; info: object };
 
 export class VfxSpawner {
     static spawnHit(worldPos: Vector3): void {

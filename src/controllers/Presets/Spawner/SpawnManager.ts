@@ -1,16 +1,5 @@
 import { UpdateController } from "@24tools/playable_template";
-
-export interface SpawnConfig {
-    resourceType: string;
-    respawnDelay: number;
-    maxCount: number;
-}
-
-interface PendingRespawn {
-    config: SpawnConfig;
-    timeLeft: number;
-    spawnFn: () => void;
-}
+import { PendingRespawn, SpawnConfig } from "../Interfaces/spawn";
 
 export class SpawnManager
 {

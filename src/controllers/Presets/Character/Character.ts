@@ -1,8 +1,10 @@
 import { EasyEvent } from "@24tools/playable_template";
-import { AnimationAction, AnimationClip, AnimationMixer, Color, LoopOnce, LoopRepeat, Mesh, MeshBasicMaterial, Object3D, Vector3 } from "three";
+import { AnimationAction, AnimationClip, AnimationMixer, LoopOnce, LoopRepeat, Object3D, Vector3 } from "three";
 import { clone } from "three/examples/jsm/utils/SkeletonUtils";
 import { ThreeC } from "../../ThreeC";
 import { GLTF } from "three/examples/jsm/loaders/GLTFLoader";
+import { DEFAULT_FADE } from "../Constants/fade";
+import { WeaponType } from "../Enums/WeaponType";
 
 export class Character {
   tObj: Object3D;
@@ -22,11 +24,15 @@ export class Character {
     tObj.castShadow = true;
     let animMixer = new AnimationMixer(tObj);
 
-    animMixer.addEventListener('loop', () => {
-      this.onAnimLoop.Invoke({});
+    animMixer.addEventListener('loop', (event) => {
+      if (event.action === this.curClipAction) {
+        this.onAnimLoop.Invoke({});
+      }
     });
-    animMixer.addEventListener('finished', () => {
-      this.onAnimFinish.Invoke({});
+    animMixer.addEventListener('finished', (event) => {
+      if (event.action === this.curClipAction) {
+        this.onAnimFinish.Invoke({});
+      }
     });
 
     if (start_position) tObj.position.copy(start_position);
@@ -55,7 +61,15 @@ export class Character {
     if (part) part.visible = visible;
   }
 
-  playAnimation(anim_id: number, one_time: boolean = false, fade = 0.25, randomStart = false) {
+  setWeaponLoadout(type: WeaponType) {
+    const melee  = type === WeaponType.Melee;
+    const pistol = type === WeaponType.Pistol;
+    this.setPartVisible('Weapon_Hand',      melee);
+    this.setPartVisible('Character_Pistol', pistol);
+    this.setPartVisible('Weapon_Back',      !melee);
+  }
+
+  playAnimation(anim_id: number, one_time: boolean = false, fade = DEFAULT_FADE, randomStart = false) {
     this._stopAllBlendedActions(fade);
     let oldClipAction: null | AnimationAction = this.curClipAction;
     var clipAction = this.animMixer.clipAction(this.animationList[anim_id]);
@@ -81,7 +95,7 @@ export class Character {
     this.curClipAction = clipAction;
   }
 
-  playBlendedAnimations(blends: Array<{ animId: number; weight: number }>, fade = 0.25) {
+  playBlendedAnimations(blends: Array<{ animId: number; weight: number }>, fade = DEFAULT_FADE) {
     if (this.curClipAction) {
       this.curClipAction.fadeOut(fade);
       this.curClipAction = null;
@@ -120,7 +134,7 @@ export class Character {
     if (action) action.timeScale = timeScale;
   }
 
-  updateOverlayAnimation(animId: number, weight: number, fade = 0.25): void {
+  updateOverlayAnimation(animId: number, weight: number, fade = DEFAULT_FADE): void {
     const toRemove: number[] = [];
     for (const [id, action] of this._blendedActionsMap) {
       if (id !== animId) {
@@ -144,7 +158,7 @@ export class Character {
     action.weight = weight;
   }
 
-  stopOverlayAnimations(fade = 0.25): void {
+  stopOverlayAnimations(fade = DEFAULT_FADE): void {
     for (const action of this._blendedActionsMap.values()) {
       action.fadeOut(fade);
     }

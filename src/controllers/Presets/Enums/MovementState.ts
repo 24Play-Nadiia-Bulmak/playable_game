@@ -15,6 +15,7 @@ export enum MovementState {
 
     Death,
 }
+
 export enum NpcMovementState { 
     Idle, 
     Forward 

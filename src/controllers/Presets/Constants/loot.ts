@@ -1,0 +1,7 @@
+export const LOOT = {
+    DAMAGE_PER_HIT: 3,
+    VFX_Y_OFFSET: 1.0,
+    VFX_Z_OFFSET: 0.5,
+    DAMAGE_THRESHOLD_RATIO: 0.5,
+    SHAKE_THRESHOLD_DIVISOR: 3,
+} as const;

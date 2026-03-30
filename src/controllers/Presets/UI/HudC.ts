@@ -1,15 +1,10 @@
 import { Delegate } from "@24tools/playable_template";
 import { CameraC } from "../../CameraC";
 import { Vector3 } from "three";
-import { Inventory, ResourseSystem } from "../ResourseSystem/ResourseSystem";
-import { MAX_PLANKS } from "../PayZone/PayZone";
-
-const SLOTS: ReadonlyArray<{ type: string }> = [
-    { type: 'wood' },
-    { type: 'herb' },
-];
-
-const PLANKS_PER_LEVEL = MAX_PLANKS;
+import { ResourceSystem } from "../ResourceSystem/ResourceSystem";
+import { triggerCssAnimation } from "../Utils/cssUtil";
+import { HUD_SLOTS, PLANKS_PER_LEVEL } from "../Constants/hud";
+import { Inventory } from "../Interfaces/inventory";
 
 export class HudC
 {
@@ -23,15 +18,16 @@ export class HudC
     private static _deliveryLvlEl:   HTMLElement | null = null;
     private static _deliveryCountEl: HTMLElement | null = null;
     private static _deliveryTotal:   number = 0;
+    private static _currentLevel:    number = 0;
 
-    static init(inventory: ResourseSystem): void
+    static init(inventory: ResourceSystem): void
     {
         const ui = document.getElementById('ui');
         if (!ui) return;
 
         this._hud = ui.querySelector<HTMLElement>('#hud');
 
-        for (const slot of SLOTS)
+        for (const slot of HUD_SLOTS)
         {
             const el = ui.querySelector<HTMLElement>(`.hud-count[data-type="${slot.type}"]`);
             if (el) this._counters.set(slot.type, el);
@@ -79,9 +75,7 @@ export class HudC
 
     private static _bumpCounter(el: HTMLElement): void
     {
-        el.classList.remove('hud-bump');
-        void el.offsetWidth;
-        el.classList.add('hud-bump');
+        triggerCssAnimation(el, 'hud-bump');
     }
 
     private static _refresh(inv: Readonly<Inventory>): void
@@ -108,25 +102,29 @@ export class HudC
         const inLevel = this._deliveryTotal % PLANKS_PER_LEVEL;
         const percent = (inLevel / PLANKS_PER_LEVEL) * 100;
 
-        if (this._deliveryLvlEl)   this._deliveryLvlEl.textContent   = `LVL ${level}`;
+        if (this._deliveryLvlEl)
+        {
+            this._deliveryLvlEl.textContent = `LVL ${level}`;
+            if (level > this._currentLevel)
+            {
+                triggerCssAnimation(this._deliveryLvlEl, 'level-up-pulse');
+            }
+        }
+        this._currentLevel = level;
         if (this._deliveryCountEl) this._deliveryCountEl.textContent  = `${inLevel} / ${PLANKS_PER_LEVEL}`;
         if (this._deliveryFillEl)  this._deliveryFillEl.style.width   = `${percent}%`;
         if (this._deliveryTrackEl) this._deliveryTrackEl.style.height = `${12 + percent * 0.12}px`;
 
         if (this._deliveryBarEl)
         {
-            this._deliveryBarEl.classList.remove('delivery-bump');
-            void this._deliveryBarEl.offsetWidth;
-            this._deliveryBarEl.classList.add('delivery-bump');
+            triggerCssAnimation(this._deliveryBarEl, 'delivery-bump');
         }
     }
 
     static pulseTrack(): void
     {
         if (!this._deliveryTrackEl) return;
-        this._deliveryTrackEl.classList.remove('delivery-track-grow');
-        void this._deliveryTrackEl.offsetWidth;
-        this._deliveryTrackEl.classList.add('delivery-track-grow');
+        triggerCssAnimation(this._deliveryTrackEl, 'delivery-track-grow');
     }
 
     static getDeliveryBarRect(): DOMRect | null

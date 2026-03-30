@@ -22,55 +22,17 @@ export class TriggerSystem {
     }
 
     static getNearestActivePosition(resourceType: string): Vector3 | null {
-        let nearest: TriggerZone | null = null;
-        let nearestDist = Infinity;
-        const playerPos = Player.Position;
-
-        for (const trigger of this.triggers) {
-            if (trigger.resourceType !== resourceType || !trigger.isPlayerInside) continue;
-            const dist = playerPos.distanceTo(trigger.position);
-            if (dist < nearestDist) {
-                nearestDist = dist;
-                nearest = trigger;
-            }
-        }
+        const nearest = this._findNearest(t => t.resourceType === resourceType && t.isPlayerInside);
         return nearest ? nearest.position.clone() : null;
     }
 
     static getNearestActiveTrigger(resourceType: string): TriggerZone | null {
-        let nearest: TriggerZone | null = null;
-        let nearestDist = Infinity;
-        const playerPos = Player.Position;
-
-        for (const trigger of this.triggers) {
-            if (trigger.resourceType !== resourceType || !trigger.isPlayerInside) continue;
-            const dist = playerPos.distanceTo(trigger.position);
-            if (dist < nearestDist) {
-                nearestDist = dist;
-                nearest = trigger;
-            }
-        }
-
-        return nearest ?? null;
+        return this._findNearest(t => t.resourceType === resourceType && t.isPlayerInside);
     }
 
     static getNearestActiveLootTrigger(types: string[]): TriggerZone | null
     {
-        let nearest: TriggerZone | null = null;
-        let nearestDist = Infinity;
-        const playerPos = Player.Position;
-
-        for (const trigger of this.triggers)
-        {
-            if (!types.includes(trigger.resourceType) || !trigger.isPlayerInside) continue;
-            const dist = playerPos.distanceTo(trigger.position);
-            if (dist < nearestDist)
-            {
-                nearestDist = dist;
-                nearest = trigger;
-            }
-        }
-        return nearest ?? null;
+        return this._findNearest(t => types.includes(t.resourceType) && t.isPlayerInside);
     }
 
     static getAllActiveLootTriggers(types: string[]): TriggerZone[]
@@ -85,6 +47,22 @@ export class TriggerSystem {
     static hasAnyActiveLootTrigger(types: string[]): boolean
     {
         return this.triggers.some(t => types.includes(t.resourceType) && t.isPlayerInside);
+    }
+
+    private static _findNearest(predicate: (t: TriggerZone) => boolean): TriggerZone | null {
+        let nearest: TriggerZone | null = null;
+        let nearestDist = Infinity;
+        const playerPos = Player.Position;
+
+        for (const trigger of this.triggers) {
+            if (!predicate(trigger)) continue;
+            const dist = playerPos.distanceTo(trigger.position);
+            if (dist < nearestDist) {
+                nearestDist = dist;
+                nearest = trigger;
+            }
+        }
+        return nearest;
     }
 
     private static update() {

@@ -23,12 +23,6 @@ export class WoodParticleSpawner {
             instance.scale.set(0, 0, 0);
             instance.position.copy(worldPosition);
 
-            // instance.rotation.set(
-            //     Math.random() * Math.PI,
-            //     Math.random() * Math.PI,
-            //     Math.random() * Math.PI
-            // );
-
             ThreeC.addToScene(instance);
 
             const animData = { 
@@ -36,7 +30,6 @@ export class WoodParticleSpawner {
                 x: worldPosition.x + (Math.random() - 0.5) * this.SPREAD_RADIUS,
                 y: worldPosition.y, 
                 z: worldPosition.z + (Math.random() - 0.5) * this.SPREAD_RADIUS,
-                // ry: instance.rotation.y
             };
 
             const finalScale = 0.5 + Math.random() * 0.2;
@@ -47,13 +40,11 @@ export class WoodParticleSpawner {
                     x: targetX,
                     z: targetZ,
                     y: worldPosition.y + 1.2,
-                    // ry: animData.ry + Math.PI
                 }, 400)
                 .easing(Easing.Quadratic.Out)
                 .onUpdate(({ s, x, y, z,  }) => {
                     instance.scale.setScalar(s);
                     instance.position.set(x, y, z);
-                    // instance.rotation.y = ry;
                 });
 
             const fallDown = new Tween(animData)

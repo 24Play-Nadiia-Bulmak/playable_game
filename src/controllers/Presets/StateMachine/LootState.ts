@@ -1,16 +1,17 @@
 import { Delegate } from "@24tools/playable_template";
 import { Character } from "../Character/Character";
 import { BaseAnimation } from "../Enums/BaseAnimation";
-import { RotationC } from "../Movment/RotationC";
+import { RotationC } from "../Movement/RotationC";
 import { TriggerSystem } from "../Trigger/TriggerSystem";
 import { TriggerZone } from "../Trigger/TriggerZone";
-import { Prop } from "../Prop/Prop";
-import { IState } from "./StateMachine";
+import { LootProp } from "../LootProp/LootProp";
 import { Player } from "../Player";
 import { HudC } from "../UI/HudC";
-import { VfxSpawner } from "../Prop/VfxSpawner";
-import { vfx } from "../../../resources/vfx/vfx";
+import { VfxSpawner } from "../Spawner/VfxSpawner";
 import { Vector3 } from "quarks.core";
+import { LOOT } from '../Constants/loot';
+import { IState } from "../Interfaces/stateMachine";
+import { WeaponType } from "../Enums/WeaponType";
 
 export class LootState implements IState {
     private _onLoopDelegate: Delegate<{}>;
@@ -31,25 +32,25 @@ export class LootState implements IState {
             this.character.playAnimation(BaseAnimation.Loot);
             this._cycleTimer = 0;
             this._shakeTriggered = false;
-            if (elapsed >= this._lootDuration * 0.5) {
+            if (elapsed >= this._lootDuration * LOOT.DAMAGE_THRESHOLD_RATIO) {
                 this._applyDamage();
             }
         });
     }
 
     private _applyDamageTo(trigger: TriggerZone): void {
-        const prop = trigger.data as Prop | null;
+        const prop = trigger.data as LootProp | null;
         if (!prop) return;
 
-        prop.takeDamage(3);
+        prop.takeDamage(LOOT.DAMAGE_PER_HIT);
 
         const resourceType = trigger.resourceType;
         const collectPos = trigger.position.clone();
         Player.inventory.addResource(resourceType, 1);
         HudC.flyToHud(resourceType, collectPos);
         const vfxPos = collectPos.clone();
-            vfxPos.y += 1.0;
-            vfxPos.z += 0.5;
+            vfxPos.y += LOOT.VFX_Y_OFFSET;
+            vfxPos.z += LOOT.VFX_Z_OFFSET;
         VfxSpawner.spawnResCollected(vfxPos);
     }
 
@@ -80,15 +81,13 @@ export class LootState implements IState {
         this._shakeTriggered = false;
         this.character.playAnimation(BaseAnimation.Loot);
         this.character.onAnimLoop.addListener(this._onLoopDelegate);
-        this.character.setPartVisible("Weapon_Hand", true);
-        this.character.setPartVisible("Character_Pistol", false);
-        this.character.setPartVisible("Weapon_Back", false);
+        this.character.setWeaponLoadout(WeaponType.Unarmed);
     }
     
     onUpdate(delta: number) {
         const exited = this._lockedTriggers.filter(t => !t.isPlayerInside);
         for (const trigger of exited) {
-            (trigger.data as Prop | null)?.hideBar();
+            (trigger.data as LootProp | null)?.hideBar();
         }
         if (exited.length > 0) {
             this._lockedTriggers = this._lockedTriggers.filter(t => t.isPlayerInside);
@@ -99,10 +98,10 @@ export class LootState implements IState {
         for (const trigger of allActive) {
             if (this._lockedTriggers.includes(trigger)) continue;
             this._lockedTriggers.push(trigger);
-            (trigger.data as Prop | null)?.showBar();
+            (trigger.data as LootProp | null)?.showBar();
             if (this._shakeTriggered) {
-                (trigger.data as Prop | null)?.shake();
-                VfxSpawner.spawnHit(trigger.position.clone().add(new Vector3(0, 1, 0)));
+                (trigger.data as LootProp | null)?.shake();
+                VfxSpawner.spawnHit(trigger.position.clone().add(new Vector3(0, LOOT.VFX_Y_OFFSET, 0)));
             }
         }
 
@@ -116,11 +115,11 @@ export class LootState implements IState {
 
         if (this._lockedTriggers.length > 0) {
             this._cycleTimer += delta;
-            if (!this._shakeTriggered && this._cycleTimer >= this._lootDuration / 3) {
+            if (!this._shakeTriggered && this._cycleTimer >= this._lootDuration / LOOT.SHAKE_THRESHOLD_DIVISOR) {
                 this._shakeTriggered = true;
                 for (const trigger of this._lockedTriggers) {
-                    (trigger.data as Prop | null)?.shake();
-                    VfxSpawner.spawnHit(trigger.position.clone().add(new Vector3(0, 1, 0)));
+                    (trigger.data as LootProp | null)?.shake();
+                    VfxSpawner.spawnHit(trigger.position.clone().add(new Vector3(0, LOOT.VFX_Y_OFFSET, 0)));
                 }
             }
         }
@@ -132,13 +131,11 @@ export class LootState implements IState {
         this.character.onAnimLoop.removeListeners(this._onLoopDelegate);
         this.rotation.lookAtTarget = null;
         for (const trigger of this._lockedTriggers) {
-            (trigger.data as Prop | null)?.hideBar();
+            (trigger.data as LootProp | null)?.hideBar();
         }
         this._lockedTriggers = [];
         this._cycleTimer = 0;
         this._shakeTriggered = false;
-        this.character.setPartVisible("Weapon_Hand", false);
-        this.character.setPartVisible("Character_Pistol", false);
-        this.character.setPartVisible("Weapon_Back", true);
+        this.character.setWeaponLoadout(WeaponType.Unarmed);
     }
 }

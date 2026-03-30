@@ -1,0 +1,1 @@
+export const DEFAULT_FADE = 0.25;

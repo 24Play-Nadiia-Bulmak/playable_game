@@ -22,7 +22,6 @@ export class LootProgressBar
 
     private readonly _updateDelegate: Delegate<number>;
     private readonly _worldPos = new Vector3();
-    private readonly _camWorldPos = new Vector3();
 
     constructor(private readonly _getAnchor: () => Object3D | null, private readonly _totalSteps: number)
     {
@@ -99,7 +98,6 @@ export class LootProgressBar
     {
         if (!this._isVisible) return;
 
-        // Lerp the middle-ground mesh scale towards the fill target.
         if (this._middleGroundMesh)
         {
             const current = this._middleGroundMesh.scale.x;
@@ -112,18 +110,15 @@ export class LootProgressBar
 
         anchor.getWorldPosition(this._worldPos);
         this._root.position.set(
-            this._worldPos.x +0.25  ,
+            this._worldPos.x + 0.25,
             this._worldPos.y + LootProgressBar.HEIGHT_OFFSET,
-            this._worldPos.z + 0.75,
+            this._worldPos.z,
         );
 
         const camera = CameraC.camera;
         if (camera)
         {
-            // camera.position is local — getWorldPosition is required to get the actual world position
-            // so that lookAt faces the viewport correctly regardless of the camera hierarchy depth.
-            camera.getWorldPosition(this._camWorldPos);
-            this._root.lookAt(this._camWorldPos);
+            this._root.quaternion.copy(camera.quaternion);
         }
     }
 }

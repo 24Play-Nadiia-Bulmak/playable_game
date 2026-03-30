@@ -1,11 +1,8 @@
 import { EasyEvent } from "@24tools/playable_template";
-import { initialInventory } from "./initialInventory";
+import { initialInventory } from "../Constants/InitialInventory";
+import { Inventory } from "../Interfaces/inventory";
 
-export interface Inventory {
-    [key: string]: number;
-}
-
-export class ResourseSystem {
+export class ResourceSystem {
     private inventory: Inventory;
 
     readonly onChange: EasyEvent<Readonly<Inventory>> = new EasyEvent<Readonly<Inventory>>();

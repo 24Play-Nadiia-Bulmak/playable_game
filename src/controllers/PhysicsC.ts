@@ -4,7 +4,9 @@ import {
   UpdateController,
 } from "@24tools/playable_template";
 import { Box3, Object3D, Vector3 } from "three";
+import { PHYSICS } from './Presets/Constants/physics';
 import { Body, Box, Quaternion, Sphere, Vec3 } from "cannon-es";
+import { PhysicsLayer } from "./Presets/Enums/Physics";
 
 export class PhysicsC
 {
@@ -19,19 +21,11 @@ export class PhysicsC
         {
             try
             {
-                Physics_internal.physicsWorld?.fixedStep(1 / 60, 3);
+                Physics_internal.physicsWorld?.fixedStep(PHYSICS.FIXED_TIME_STEP, PHYSICS.MAX_SUB_STEPS);
             }
             catch (e) { }
         });
     }
-}
-
-export enum PhysicsLayer {
-  Player = 1,
-  Npc = 2,
-  Wall = 4,
-  Trigger = 8,
-  Enemy = 16,
 }
 
 export class PhysicsBody {
@@ -47,36 +41,35 @@ export class PhysicsBody {
     player_sphere: number = 0.3,
     isKinematic: boolean = false
   ) {
-    let isPlayer = col_group === PhysicsLayer.Player || col_group === PhysicsLayer.Npc; // для гравця сфера, для інших об'єктів коробка, але це можна змінити під свої потреби
+    let isPlayer = col_group === PhysicsLayer.Player || col_group === PhysicsLayer.Npc;
 
-    let oldQuaternion = threeObj.quaternion.clone(); // для правильного розміру колізії, бо модель може бути повернута, а фізичне тіло має бути вирівняне по осях
+    let oldQuaternion = threeObj.quaternion.clone();
 
-    let nullQuaternion = new Quaternion(); // нульовий кватерніон для отримання розміру об'єкта без урахування повороту
-    threeObj.quaternion.copy(nullQuaternion); // тимчасово встановлюємо нульовий кватерніон для отримання правильного розміру об'єкта
+    let nullQuaternion = new Quaternion();
+    threeObj.quaternion.copy(nullQuaternion);
 
-    let bbox = new Box3().setFromObject(threeObj); // розмір моделі для фізики
+    let bbox = new Box3().setFromObject(threeObj);
 
     let size = new Vector3();
     bbox.getSize(size);
 
-    threeObj.quaternion.copy(oldQuaternion); // повертаємо оригінальний кватерніон назад
+    threeObj.quaternion.copy(oldQuaternion);
 
     this.body = new Body({
-      isTrigger: trigger, // чи є це тригером (не фізичною перешкодою, а об'єктом для виявлення колізій)
+      isTrigger: trigger,
       mass: mass,
-      //shape: shape,
       shape: isPlayer
         ? new Sphere(player_sphere)
         : new Box(new Vec3(size.x / 2, size.y / 2, size.z / 2)),
-      collisionFilterGroup: col_group,  // налаштування групи колізії
-      collisionFilterMask: col_mask,  // налаштування маски колізії (з якими групами цей об'єкт буде взаємодіяти)
+      collisionFilterGroup: col_group,
+      collisionFilterMask: col_mask,
     });
 
     let worldPos = threeObj.getWorldPosition(new Vector3());
 
     this.body.position.set(worldPos.x, worldPos.y, worldPos.z);
 
-    this.body.quaternion.setFromEuler( // синхронізація повороту між three.js і cannon-es
+    this.body.quaternion.setFromEuler(
       threeObj.rotation.x,
       threeObj.rotation.y,
       threeObj.rotation.z,
@@ -87,37 +80,35 @@ export class PhysicsBody {
       Physics_internal.physicsWorld.addBody(this.body);
 
     if (isKinematic) {
-      this.body.type = Body.KINEMATIC; // рухається через velocity, але не отримує імпульсів від зіткнень
+      this.body.type = Body.KINEMATIC;
     }
 
     return this;
   }
 
-  disablePhysicsPair() { // зупиняє синхронізацію між three.js і cannon-es, якщо вона була створена, наприклад для ворога
+  disablePhysicsPair() {
     if (this.pair) {
       this.pair.destroyed = true;
     }
   }
 
-  getPhysicsBody() { // для отримання доступу до тіла фізики, якщо потрібно напряму взаємодіяти з ним
+  getPhysicsBody() {
     return this.body;
   }
 
-  /** Removes the body from the physics world but keeps the body reference alive so it can be re-added later via addToWorld(). */
   removeFromWorld(): void
   {
     if (!Physics_internal.physicsWorld || !this.body) return;
     Physics_internal.physicsWorld.removeBody(this.body);
   }
 
-  /** Re-adds a previously removed body back into the physics world. */
   addToWorld(): void
   {
     if (!Physics_internal.physicsWorld || !this.body) return;
     Physics_internal.physicsWorld.addBody(this.body);
   }
 
-  destroy() { // видаляє тіло з фізики і зупиняє синхронізацію, якщо вона була створена
+  destroy() {
     if (!Physics_internal.physicsWorld) return;
 
     Physics_internal.physicsWorld.removeBody(this.body);
@@ -137,7 +128,7 @@ export class PhysicsObjPair {
     this.physicsObj = physicsObj;
     this.destroyed = false;
 
-    this.delegateId = UpdateController.Instance.onUpdate.addDelegate(() => { // синхронізація позиції і повороту між three.js і cannon-es кожного кадру
+    this.delegateId = UpdateController.Instance.onUpdate.addDelegate(() => {
       this.update();
     });
   }
@@ -146,9 +137,7 @@ export class PhysicsObjPair {
     if (this.destroyed) return;
 
     if (this.threeObj && this.physicsObj) {
-      // @ts-ignore
       this.threeObj.position.copy(this.physicsObj.position);
-      // @ts-ignore
       this.threeObj.quaternion.copy(this.physicsObj.quaternion);
     }
   }

@@ -31,10 +31,10 @@ export class RotationC {
             this.targetQ.copy(this.target.quaternion);
             this.target.quaternion.copy(this.currentQ);
         } else if (this.enabled) {
-            const loockAtStep = this.input.CurrentDirection;
-            if (loockAtStep.length() != 0) {
-                const loockAtPoint = this.target.position.clone().add(loockAtStep);
-                this.target.lookAt(loockAtPoint);
+            const lookAtStep = this.input.CurrentDirection;
+            if (lookAtStep.length() != 0) {
+                const lookAtPoint = this.target.position.clone().add(lookAtStep);
+                this.target.lookAt(lookAtPoint);
                 this.targetQ.copy(this.target.quaternion);
                 this.target.quaternion.copy(this.currentQ);
             }
