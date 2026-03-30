@@ -25,5 +25,6 @@ export const PAY_ZONE = {
     FALLBACK_Y_OFFSET: 30,
     FILL_MESH_Y_OFFSET: 0.02,
     LABEL_Y_OFFSET: 0.05,
-    FILL_OPACITY: 0.7,
+    FILL_OPACITY:    0.7,
+    FILL_RESET_MS:   250,
 } as const;

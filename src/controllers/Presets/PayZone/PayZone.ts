@@ -23,6 +23,7 @@ export class PayZone
 
     private          _fillMesh:        Mesh;
     private          _fillSize:        number = 0;
+    private          _activeFillTweens: Tween<any>[] = [];
     private readonly _labelMesh:      Mesh;
     private readonly _updateDelegate: Delegate<number>;
 
@@ -81,8 +82,88 @@ export class PayZone
         return mesh;
     }
 
+    private _tweenFillAcrossLevel(timeToFull: number, remainderDuration: number, finalTarget: number): void
+    {
+        this._stopActiveFillTweens();
+
+        const data1  = { y: this._fillMesh.scale.y };
+        const tween1 = new Tween(data1)
+            .to({ y: 1.0 }, timeToFull)
+            .easing(Easing.Quadratic.Out)
+            .onUpdate(({ y }) =>
+            {
+                this._fillMesh.scale.y    = y;
+                this._fillMesh.position.z = this._fillSize / 2 * (1 - y);
+            })
+            .onComplete(() =>
+            {
+                if (finalTarget <= 0)
+                {
+                    // Smooth reset to 0 with no remainder
+                    const dataReset  = { y: this._fillMesh.scale.y };
+                    const tweenReset = new Tween(dataReset)
+                        .to({ y: 0 }, PAY_ZONE.FILL_RESET_MS)
+                        .easing(Easing.Quadratic.In)
+                        .onUpdate(({ y }) =>
+                        {
+                            this._fillMesh.scale.y    = y;
+                            this._fillMesh.position.z = this._fillSize / 2 * (1 - y);
+                        })
+                        .onComplete(() =>
+                        {
+                            this._fillMesh.position.z = this._fillSize / 2;
+                        });
+                    this._activeFillTweens.push(tweenReset);
+                    tweenReset.start();
+                    TweenC.add(tweenReset);
+                    return;
+                }
+
+                // Smooth reset to 0, then animate to remainder
+                const dataReset  = { y: this._fillMesh.scale.y };
+                const tweenReset = new Tween(dataReset)
+                    .to({ y: 0 }, PAY_ZONE.FILL_RESET_MS)
+                    .easing(Easing.Quadratic.In)
+                    .onUpdate(({ y }) =>
+                    {
+                        this._fillMesh.scale.y    = y;
+                        this._fillMesh.position.z = this._fillSize / 2 * (1 - y);
+                    })
+                    .onComplete(() =>
+                    {
+                        this._fillMesh.position.z = this._fillSize / 2;
+                        const data2  = { y: 0 };
+                        const tween2 = new Tween(data2)
+                            .to({ y: finalTarget }, remainderDuration)
+                            .easing(Easing.Quadratic.Out)
+                            .onUpdate(({ y }) =>
+                            {
+                                this._fillMesh.scale.y    = y;
+                                this._fillMesh.position.z = this._fillSize / 2 * (1 - y);
+                            });
+                        this._activeFillTweens.push(tween2);
+                        tween2.start();
+                        TweenC.add(tween2);
+                    });
+                this._activeFillTweens.push(tweenReset);
+                tweenReset.start();
+                TweenC.add(tweenReset);
+            });
+        this._activeFillTweens.push(tween1);
+        tween1.start();
+        TweenC.add(tween1);
+    }
+
+    private _stopActiveFillTweens(): void
+    {
+        for (const t of this._activeFillTweens) t.stop();
+        this._activeFillTweens = [];
+    }
+
     private _tweenFill(target: number, durationMs: number = 200): void
     {
+        this._stopActiveFillTweens();
+
         const clampedTarget = Math.min(Math.max(target, 0), 1);
         const data          = { y: this._fillMesh.scale.y };
         const tween         = new Tween(data)
@@ -93,6 +174,7 @@ export class PayZone
                 this._fillMesh.scale.y    = y;
                 this._fillMesh.position.z = this._fillSize / 2 * (1 - y);
             });
+        this._activeFillTweens.push(tween);
         tween.start();
         TweenC.add(tween);
     }
@@ -135,11 +217,25 @@ export class PayZone
         const visualCount = Math.min(woodCount, PAY_ZONE.MAX_PLANKS);
         const playerPos   = Player.Position.clone().add(new Vector3(0, 1, 0));
         const alreadyDelivered = HudC.getDeliveredInLevel();
-        const fillTarget       = Math.min((alreadyDelivered + visualCount) / PAY_ZONE.MAX_PLANKS, 1);
 
         const phase1Duration = (visualCount - 1) * PAY_ZONE.STAGGER_MS + PAY_ZONE.PHASE1_BASE_MS + PAY_ZONE.PHASE_BUFFER_MS;
         const phase2Duration = (visualCount - 1) * PAY_ZONE.STAGGER_MS + PAY_ZONE.PHASE2_BASE_MS + PAY_ZONE.PHASE_BUFFER_MS;
-        this._tweenFill(fillTarget, phase1Duration + phase2Duration);
+        const totalDuration  = phase1Duration + phase2Duration;
+
+        if (alreadyDelivered + visualCount > PAY_ZONE.MAX_PLANKS)
+        {
+            // Delivery crosses a level boundary — split the fill tween:
+            // animate to full (1.0), reset to 0, then animate to the overflow remainder.
+            const planksToFill  = PAY_ZONE.MAX_PLANKS - alreadyDelivered;
+            const timeToLevelUp = phase1Duration + (planksToFill - 1) * PAY_ZONE.STAGGER_MS + PAY_ZONE.PHASE2_BASE_MS;
+            const finalTarget   = (alreadyDelivered + visualCount - PAY_ZONE.MAX_PLANKS) / PAY_ZONE.MAX_PLANKS;
+            this._tweenFillAcrossLevel(timeToLevelUp, totalDuration - timeToLevelUp, finalTarget);
+        }
+        else
+        {
+            const fillTarget = (alreadyDelivered + visualCount) / PAY_ZONE.MAX_PLANKS;
+            this._tweenFill(fillTarget, totalDuration);
+        }
 
         this._spawnPlanks3D(playerPos, this._position, visualCount, PAY_ZONE.PHASE1_BASE_MS, () =>
         {
@@ -269,8 +365,23 @@ export class PayZone
 
     private _resetFill(): void
     {
-        this._fillMesh.scale.y    = 0;
-        this._fillMesh.position.z = this._fillSize / 2;
+        this._stopActiveFillTweens();
+        const data  = { y: this._fillMesh.scale.y };
+        const tween = new Tween(data)
+            .to({ y: 0 }, PAY_ZONE.FILL_RESET_MS)
+            .easing(Easing.Quadratic.In)
+            .onUpdate(({ y }) =>
+            {
+                this._fillMesh.scale.y    = y;
+                this._fillMesh.position.z = this._fillSize / 2 * (1 - y);
+            })
+            .onComplete(() =>
+            {
+                this._fillMesh.position.z = this._fillSize / 2;
+            });
+        this._activeFillTweens.push(tween);
+        tween.start();
+        TweenC.add(tween);
     }
 
     private _startIdleAnimation(): void

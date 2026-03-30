@@ -49,4 +49,9 @@ export class NpcInput implements IMoveInput {
         this.idleDuration = NpcInput.MIN_IDLE + Math.random() * (NpcInput.MAX_IDLE - NpcInput.MIN_IDLE);
         this.isIdle = true;
     }
+
+    public forceNewDirection() {
+        this.timer = 0;
+        this.pickNewDirection();
+    }
 }

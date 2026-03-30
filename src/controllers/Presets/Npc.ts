@@ -36,6 +36,12 @@ import { PhysicsLayer } from "./Enums/Physics";
      private _hp: number = NPC.INITIAL_HP;
      private _dead: boolean = false;
 
+     private _prevPhysPos = { x: 0, z: 0 };
+     private _stuckTime: number = 0;
+     private static readonly STUCK_TIME = 0.3;
+     private static readonly STUCK_DISPLACEMENT = 0.02;
+     private static readonly STUCK_MIN_SPEED = 0.5;
+
      get Position() {
          return this.container.position;      
      }  
@@ -140,7 +146,27 @@ import { PhysicsLayer } from "./Enums/Physics";
             this.UpdateMovementState(dir, weight);
 
             const cPos = Vector3TToC(dir);
-            this.physics.getPhysicsBody().velocity.copy(cPos);
+            const body = this.physics.getPhysicsBody();
+            body.velocity.copy(cPos);
+
+            const physPos = body.position;
+            const dx = physPos.x - this._prevPhysPos.x;
+            const dz = physPos.z - this._prevPhysPos.z;
+            const displacement = Math.sqrt(dx * dx + dz * dz);
+
+            if (dir.length() > Npc.STUCK_MIN_SPEED && displacement < Npc.STUCK_DISPLACEMENT) {
+                this._stuckTime += delta;
+                if (this._stuckTime >= Npc.STUCK_TIME) {
+                    this.input.forceNewDirection();
+                    this._stuckTime = 0;
+                }
+            } else {
+                this._stuckTime = 0;
+            }
+
+            this._prevPhysPos.x = physPos.x;
+            this._prevPhysPos.z = physPos.z;
+
             this.MoveVisual(delta);
         }
     
